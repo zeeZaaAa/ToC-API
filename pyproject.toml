@@ -1,0 +1,8 @@
+[tool.ruff]
+line-length = 100
+lint.ignore = ["RUF012"]
+
+[tool.ruff.format]
+quote-style = "single"
+indent-style = "tab"
+skip-magic-trailing-comma = true
