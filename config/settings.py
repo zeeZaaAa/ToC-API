@@ -44,9 +44,12 @@ INSTALLED_APPS = [
 	'django.contrib.staticfiles',
 	'src.users',
 	'rest_framework',
+	'encrypted_model_fields',
 	'src.credit_cards',
 	'src.masking_data',
 ]
+
+FIELD_ENCRYPTION_KEY = os.getenv('FIELD_ENCRYPTION_KEY')
 
 AUTH_USER_MODEL = 'users.User'
 
