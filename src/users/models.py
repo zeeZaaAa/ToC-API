@@ -3,8 +3,12 @@ from django.db import models
 
 
 class User(AbstractUser):
-	login_email = models.EmailField(max_length=100, unique=True)
-	oauth_token = models.CharField(max_length=255, unique=True)
+    username = models.CharField(max_length=150, blank=True, null=True)
+    login_email = models.EmailField(max_length=100, unique=True)
+    oauth_token = models.CharField(max_length=255, unique=True)
 
-	class Meta:
-		db_table = 'users'
+    USERNAME_FIELD = 'login_email'
+    REQUIRED_FIELDS = ['username', 'oauth_id']
+    
+    class Meta:
+        db_table = 'users'

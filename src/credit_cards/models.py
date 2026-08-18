@@ -1,7 +1,7 @@
 from django.core.exceptions import PermissionDenied
 from django.db import models
 
-from ...shared.enums.credit_card import CardStatus
+from shared.enums.credit_card import CardStatus
 
 
 class CreditCard(models.Model):

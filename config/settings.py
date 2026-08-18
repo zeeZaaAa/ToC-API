@@ -44,6 +44,8 @@ INSTALLED_APPS = [
 	'django.contrib.staticfiles',
 	'src.users',
 	'rest_framework',
+	'src.credit_cards',
+	'src.masking_data',
 ]
 
 AUTH_USER_MODEL = 'users.User'

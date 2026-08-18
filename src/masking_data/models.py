@@ -1,15 +1,16 @@
+from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.db import models
 
-from ...shared.enums.masking_data import DataStatus
-from ...src.credit_cards.models import CreditCard
-from ...src.users.models import User
+from shared.enums.masking_data import DataStatus
 
 
 class MaskingData(models.Model):
-	user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='masking_datas')
+	user = models.ForeignKey(
+		settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='masking_datas'
+	)
 	credit_card = models.ForeignKey(
-		CreditCard, on_delete=models.CASCADE, related_name='masking_datas'
+		'credit_cards.CreditCard', on_delete=models.CASCADE, related_name='masking_datas'
 	)
 
 	email = models.TextField()
