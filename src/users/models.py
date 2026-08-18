@@ -1,6 +1,10 @@
 from django.contrib.auth.models import AbstractUser
+from django.db import models
 
 
 class User(AbstractUser):
-    # Add custom fields here as needed (e.g., bio, avatar, role)
-    pass
+	login_email = models.EmailField(max_length=100, unique=True)
+	oauth_token = models.CharField(max_length=255, blank=True, null=True)
+
+	class Meta:
+		db_table = 'users'
