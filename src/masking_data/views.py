@@ -8,10 +8,12 @@ from .serializers import (
 )
 from .services.masking_data_service import update_masking_data_service
 from django.shortcuts import get_object_or_404
+from rest_framework import status
 from src.credit_cards.models import CreditCard
-from src.users.models import User
+
 from .models import MaskingData
-from .serializers import MaskingDataSerializer
+from .serializers import MaskingDataCreateSerializer, MaskingDataSerializer
+
 
 class MaskingDataView(APIView):
 	def get(self, request):
