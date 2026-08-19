@@ -1,10 +1,12 @@
+from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.shortcuts import get_object_or_404
+from rest_framework import status
 from src.credit_cards.models import CreditCard
-from src.users.models import User
+
 from .models import MaskingData
-from .serializers import MaskingDataSerializer
+from .serializers import MaskingDataCreateSerializer, MaskingDataSerializer
+
 
 class MaskingDataView(APIView):
 	def get(self, request):
@@ -16,7 +18,14 @@ class MaskingDataView(APIView):
 		return Response(serializer.data)
 
 	def post(self, request):
-		pass
+		serializer = MaskingDataCreateSerializer(data=request.data)
+
+		if serializer.is_valid():
+			serializer.save()
+			return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+		return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+		
 
 	def put(self, request, id):
 		pass
