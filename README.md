@@ -28,11 +28,21 @@ ToC-API/
 │   │   ├── views.py
 │   │   ├── urls.py
 │   │   └── migrations/
+│   ├── credit_cards/
+│   │   ├── models.py
+│   │   ├── serializers.py
+│   │   ├── views.py
+│   │   └── migrations/
 │   └── masking_data/
 │       ├── models.py
 │       ├── serializers.py
 │       ├── views.py
-│       └── urls.py
+│       ├── urls.py
+│       └── migrations/
+├── shared/
+│   └── masked_and_pattern/
+│       ├── pattern.py
+│       └── masked.py
 ├── manage.py
 ├── requirements.txt
 ├── pyproject.toml
@@ -342,11 +352,49 @@ The repository currently has the basic Django/DRF structure in place.
 
 - `src/users` contains a custom Django `User` model based on `AbstractUser`.
 - `src/masking_data` contains a `MaskingData` model.
-- Both API views currently implement a basic `GET` response.
-- `POST`, `PUT`, `PATCH`, and `DELETE` methods are placeholders and still need implementation.
+- `src/credit_cards` contains a `CreditCard` model with encrypted `number` and a `masked_number`.
+- Sensitive fields (`email`, `phone_number`, `dob`, `address`, card `number`) are encrypted via `django-encrypted-model-fields`.
+- `PUT` and `PATCH` on `/api/masking-data/<id>/` update the editable fields and regenerate their masked counterparts.
+- `POST` and `DELETE` are placeholders and still need implementation.
 - Serializers are present but are not currently wired into the API views.
 - PostgreSQL is configured as the default database.
 - Authentication/authorization and API permissions should be added if the API will be exposed beyond local development.
+
+## API Endpoints
+
+### Update masking data
+
+`PUT /api/masking-data/<id>/` — full replacement. All five editable fields are required.
+
+Request:
+
+```json
+{
+  "email": "new@example.com",
+  "phone_number": "081-234-5678",
+  "dob": "DOB:01/01/2000",
+  "address": "Address: 123 ถนนสุขุมวิท แขวงคลองเตย เขตคลองเตย กรุงเทพมหานคร",
+  "credit_card": "1234-1234-1234-1234"
+}
+```
+
+`PATCH /api/masking-data/<id>/` — partial update. Only the supplied fields change.
+
+Request:
+
+```json
+{
+  "email": "new@example.com"
+}
+```
+
+Responses:
+
+- `200 OK` — updated. The server stores the encrypted value and regenerates the corresponding masked value for each supplied field.
+- `400 Bad Request` — a supplied field fails validation (e.g. invalid email format).
+- `404 Not Found` — no record exists for the given `id`.
+
+Writable fields: `email`, `phone_number`, `dob`, `address`, `credit_card`. The masked fields, `user`, `status`, and timestamps are server-controlled and cannot be set by the client. Updating `credit_card` reuses the existing `CreditCard` object rather than creating a new one.
 
 ## Quick Start
 
