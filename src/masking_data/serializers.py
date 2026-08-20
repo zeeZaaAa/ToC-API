@@ -14,7 +14,7 @@ from shared.masked_and_pattern.masked import (
 )
 from .models import MaskingData
 # User = get_user_model() ##################################
-
+from datetime import datetime
 class MaskingDataSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = MaskingData
@@ -38,7 +38,19 @@ class MaskingDataCreateSerializer(serializers.ModelSerializer):
 			errors['address'] = 'Invalid address format.'
 		if not DOB_REGEX.fullmatch(attrs.get('dob', '')):
 			errors['dob'] = 'Invalid date of birth format.'
-
+		else:
+			raw_dob = attrs.get('dob', '')
+			date_str = raw_dob.replace('DOB:', '').strip()
+			try:
+				dob_date = datetime.strptime(date_str, '%d/%m/%Y').date()
+				if dob_date > datetime.now().date():
+					errors['dob'] = 'Date of birth cannot be in the future.'
+			except ValueError:
+				errors['dob'] = 'Invalid date value (e.g. day or month out of range).'
+  
+  
+  
+  
 		if errors:
 			raise serializers.ValidationError(errors)
 
