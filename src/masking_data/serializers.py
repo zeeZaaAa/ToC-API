@@ -22,11 +22,10 @@ from shared.masked_and_pattern.masked import (
 	mask_address,
  	mask_dob,
 	mask_phone_number,
-	mask_credit_card,
 	mask_email
 )
 from .models import MaskingData
-
+# User = get_user_model() ##################################
 
 class MaskingDataSerializer(serializers.ModelSerializer):
 	class Meta:
@@ -87,8 +86,8 @@ class MaskingDataCreateSerializer(serializers.ModelSerializer):
     
 	class Meta:
 		model = MaskingData
-		fields = ['email','phone_number','dob','address']
-
+		fields = ['email','phone_number','dob','address','credit_card']
+		read_only_fields = ['credit_card','user']
 	
 	def validate(self, attrs):
 		errors = {}
@@ -109,6 +108,7 @@ class MaskingDataCreateSerializer(serializers.ModelSerializer):
 
 	def create_new_masked(self, validated_data):
 		return {
+			
 			'masked_email': mask_email(validated_data.get('email')),
     		'masked_phone_number': mask_phone_number(validated_data.get('phone_number')),
     		'masked_dob': mask_dob(validated_data.get('dob')),
@@ -118,5 +118,14 @@ class MaskingDataCreateSerializer(serializers.ModelSerializer):
 	def create(self, validated_data):
 		masked_dict = self.create_new_masked(validated_data)
 		validated_data.update(masked_dict)
-			
+  
+		# mock_user, _ = User.objects.get_or_create(	########
+        #     login_email="mock_user@kmitl.ac.th",
+        #     defaults={
+        #         "username": "mock_admin",
+        #         "oauth_id": "mock_oauth_12345"
+        #     }
+        # )
+		# validated_data['user'] = mock_user			#########
+  
 		return super().create(validated_data)

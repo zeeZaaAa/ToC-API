@@ -16,3 +16,7 @@ def get_masked_credit_card_number_by_id(request):
     serializer = CreditCardSerializer(credit_card_details)
 
     return Response(serializer.data)
+
+class MaskingDataView(APIView):
+    def post(self, request):
+        pass
