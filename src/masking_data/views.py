@@ -3,10 +3,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
 from src.credit_cards.models import CreditCard
-
+from src.credit_cards.serializers import MaskingCreditCardCreateSerializer
 from .models import MaskingData
 from .serializers import MaskingDataCreateSerializer, MaskingDataSerializer
-
+from django.db import transaction
 
 class MaskingDataView(APIView):
 	def get(self, request):
@@ -18,13 +18,24 @@ class MaskingDataView(APIView):
 		return Response(serializer.data)
 
 	def post(self, request):
-		serializer = MaskingDataCreateSerializer(data=request.data)
-
-		if serializer.is_valid():
-			serializer.save()
-			return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-		return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+		card_serializer = MaskingCreditCardCreateSerializer(data=request.data.get('credit_card'))
+		masking_data_serializer = MaskingDataCreateSerializer(data=request.data)
+		if not card_serializer.is_valid():
+			return Response(card_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+		if not masking_data_serializer.is_valid():
+			return Response(masking_data_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+		try:
+			with transaction.atomic():
+				credit_card = card_serializer.save()
+				masking_data = masking_data_serializer.save(credit_card=credit_card)
+		except Exception as e:
+			return Response(
+                {"error": "Failed to create data", "details": str(e)}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+		return Response({
+            "message": "Created successfully",
+        }, status=status.HTTP_201_CREATED)
 		
 
 	def put(self, request, id):

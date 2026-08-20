@@ -1,5 +1,5 @@
 import re
-from pattern import PHONE_NUMBER_REGEX,CREDIT_CARD_REGEX,EMAIL_REGEX,DOB_REGEX,ADDRESS_REGEX
+from shared.masked_and_pattern.pattern import PHONE_NUMBER_REGEX,CREDIT_CARD_REGEX,EMAIL_REGEX,DOB_REGEX,ADDRESS_REGEX
 
 def mask_credit_card(credit_card):
     if not(CREDIT_CARD_REGEX.fullmatch(credit_card)):
@@ -35,8 +35,8 @@ def mask_address(address):
     sensor = "*"*house_number
     masked_address = ADDRESS_REGEX.sub(rf"\g<1>{sensor}\g<3>",address)
     return masked_address
-print(mask_email("k.uy@kmitl.ac.th"))
-print(mask_credit_card("1212-2222-3551-6701"))
-print(mask_phone_number("221-222-3551"))
-print(mask_dob("DOB:12/05/2005"))
-print(mask_address("Address: 689 ถนนลำดกระบัง แขวงลำดกระบัง เขตลำดกระบัง กรุงเทพฯ"))
+# print(mask_email("k.uy@kmitl.ac.th"))
+# print(mask_credit_card("1212-2222-3551-6701"))
+# print(mask_phone_number("221-222-3551"))
+# print(mask_dob("DOB:12/05/2005"))
+# print(mask_address("Address: 689 ถนนลำดกระบัง แขวงลำดกระบัง เขตลำดกระบัง กรุงเทพฯ"))
