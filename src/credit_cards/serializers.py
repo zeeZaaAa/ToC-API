@@ -5,4 +5,4 @@ class MaskedCreditCardSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CreditCard
-        fields = ['masked_number']
+        fields = ['id', 'masked_number']
