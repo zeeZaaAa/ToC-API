@@ -7,3 +7,8 @@ urlpatterns = [
                 path('<int:id>/', views.MaskingDataView.as_view(), name='masking-data-detail'),
                 path('<int:id>/', views.MaskingDataView.as_view(), name='masking-data-update'),
 ]
+
+# urlpatterns = [
+# 	path('', views.MaskingDataView.as_view(), name='masking-data-detail'),
+# 	path('<int:id>/', views.MaskingDataView.as_view(), name='masking-data-update'),
+# ]

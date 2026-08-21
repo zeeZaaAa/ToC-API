@@ -4,6 +4,9 @@ from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from .serializers import ActualDataSerializer
+from . import queries, services
+from rest_framework.permissions import IsAuthenticated
 
 from src.credit_cards.models import CreditCard
 from src.credit_cards.serializers import MaskingCreditCardCreateSerializer
@@ -12,7 +15,6 @@ from .models import MaskingData
 from .serializers import MaskingDataCreateSerializer, MaskingDataSerializer
 from django.db import transaction
 from .serializers import ActualDataSerializer
-from .services import DynamicPageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 
 from .models import MaskingData
@@ -31,6 +33,7 @@ from src.masking_data.queries.masking_data_queries import(
 
 from src.masking_data.services.masking_data_read import(
     get_masking_serializer_class,
+    DynamicPageNumberPagination,
 )
 from .services.masking_data_service import update_masking_data_service
 from django.shortcuts import get_object_or_404
@@ -55,29 +58,29 @@ from src.masking_data.queries.masking_data_queries import (
 )
 
 class MaskingDataListView(APIView):
+    
+    permission_classes = [IsAuthenticated]
 
-	permission_classes = [IsAuthenticated]
-
-	def get(self, request):
-		curr_user_datas = get_user_masking_data_list(user=request.user)
-
-		paginator = DynamicPageNumberPagination()
-		result_page = paginator.paginate_queryset(curr_user_datas, request)
+    def get(self, request):
+        curr_user_datas = get_user_masking_data_list(user=request.user)
+        
+        paginator = DynamicPageNumberPagination()
+        result_page = paginator.paginate_queryset(curr_user_datas, request)
 		
-		serializer = MaskingDataSerializer(result_page, many=True)
-		return paginator.get_paginated_response(serializer.data)
+        serializer = MaskingDataSerializer(result_page, many=True)
+        return paginator.get_paginated_response(serializer.data)
+    
+    def post(self, request):
+        pass
 
-	def post(self, request):
-		pass
+    def put(self, request, id):
+        pass
 
-	def put(self, request, id):
-		pass
+    def delete(self, request, id):
+        pass
 
-	def delete(self, request, id):
-		pass
-
-	def patch(self, request, id):
-		pass
+    def patch(self, request, id):
+        pass
 
 class MaskingDataView(APIView):
     permission_classes = [IsAuthenticated]
