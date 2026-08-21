@@ -12,7 +12,7 @@ class CreditCardSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CreditCard
-        fields = ['masked_number']
+        fields = ['id', 'masked_number']
         
 class MaskingCreditCardCreateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -22,3 +22,10 @@ class MaskingCreditCardCreateSerializer(serializers.ModelSerializer):
         if not(CREDIT_CARD_REGEX.fullmatch(value)):
             raise serializers.ValidationError('Invalid credit card format')
         return value
+from .models import CreditCard
+
+class MaskedCreditCardSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = CreditCard
+        fields = ['id', 'masked_number']
