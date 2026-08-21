@@ -40,39 +40,15 @@ class MaskingDataUpdateSerializer(serializers.Serializer):
 			raise serializers.ValidationError(errors)
 		return attrs
 
-	def update(self, instance, validated_data):
-		# Lazy import: mask functions are provided by the Create branch.
-		from shared.masked_and_pattern.masked import (
-			mask_address,
-			mask_credit_card,
-			mask_dob,
-			mask_email,
-			mask_phone_number,
-		)
 
-		masked_by_field = {
-			'email': 'masked_email',
-			'phone_number': 'masked_phone_number',
-			'dob': 'masked_dob',
-			'address': 'masked_address',
-		}
-		mask_by_field = {
-			'email': mask_email,
-			'phone_number': mask_phone_number,
-			'dob': mask_dob,
-			'address': mask_address,
-		}
-		for field, mask_fn in mask_by_field.items():
-			if field in validated_data:
-				setattr(instance, field, validated_data[field])
-				setattr(instance, masked_by_field[field], mask_fn(validated_data[field]))
-
-		credit_card = instance.credit_card
-		if 'credit_card' in validated_data:
-			credit_card.number = validated_data['credit_card']
-			credit_card.masked_number = mask_credit_card(validated_data['credit_card'])
-
-		instance.save()
-		if 'credit_card' in validated_data:
-			credit_card.save()
-		return instance
+class MaskingDataResponseSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = MaskingData
+		fields = [
+			'id',
+			'masked_email',
+			'masked_phone_number',
+			'masked_dob',
+			'masked_address',
+			'status',
+		]

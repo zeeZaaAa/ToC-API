@@ -1,4 +1,3 @@
-from django.db import transaction
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -6,7 +5,12 @@ from rest_framework.views import APIView
 from src.credit_cards.models import CreditCard
 
 from .models import MaskingData
-from .serializers import MaskingDataSerializer, MaskingDataUpdateSerializer
+from .serializers import (
+	MaskingDataResponseSerializer,
+	MaskingDataSerializer,
+	MaskingDataUpdateSerializer,
+)
+from .services.masking_data_service import update_masking_data_service
 
 
 class MaskingDataView(APIView):
@@ -22,20 +26,16 @@ class MaskingDataView(APIView):
 		pass
 
 	def put(self, request, id):
-		masking_data = get_object_or_404(MaskingData, id=id)
-		serializer = MaskingDataUpdateSerializer(masking_data, data=request.data)
+		serializer = MaskingDataUpdateSerializer(data=request.data)
 		serializer.is_valid(raise_exception=True)
-		with transaction.atomic():
-			serializer.save()
-		return Response(serializer.data)
+		instance = update_masking_data_service(id, serializer.validated_data)
+		return Response(MaskingDataResponseSerializer(instance).data)
 
 	def delete(self, request, id):
 		pass
 
 	def patch(self, request, id):
-		masking_data = get_object_or_404(MaskingData, id=id)
-		serializer = MaskingDataUpdateSerializer(masking_data, data=request.data, partial=True)
+		serializer = MaskingDataUpdateSerializer(data=request.data, partial=True)
 		serializer.is_valid(raise_exception=True)
-		with transaction.atomic():
-			serializer.save()
-		return Response(serializer.data)
+		instance = update_masking_data_service(id, serializer.validated_data)
+		return Response(MaskingDataResponseSerializer(instance).data)

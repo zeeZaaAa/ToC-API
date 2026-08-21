@@ -2,11 +2,17 @@ import unittest
 from unittest import mock
 
 from django.contrib.auth import get_user_model
+from django.http import Http404
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from src.credit_cards.models import CreditCard
 from src.masking_data.models import MaskingData
+from src.masking_data.queries.masking_data_queries import (
+	get_masking_data_by_id,
+	update_masking_data,
+)
+from src.masking_data.services.masking_data_service import update_masking_data_service
 
 try:
 	from shared.masked_and_pattern.masked import mask_credit_card, mask_email
@@ -215,3 +221,61 @@ class MaskingDataUpdateAPITests(APITestCase):
 		card = CreditCard.objects.get(id=self.record.credit_card_id)
 		self.assertEqual(card.number, OLD_CARD_NUMBER)
 		self.assertEqual(card.masked_number, '1234-****-****-1234')
+
+
+class MaskingDataQueryTests(APITestCase):
+	def setUp(self):
+		self.record = make_record()
+
+	def test_get_by_id_returns_correct_object(self):
+		self.assertEqual(get_masking_data_by_id(self.record.id).id, self.record.id)
+
+	def test_get_unknown_id_raises_404(self):
+		with self.assertRaises(Http404):
+			get_masking_data_by_id(999999)
+
+	def test_update_persists_fields(self):
+		update_masking_data(self.record, email='query@example.com', masked_email='q***@example.com')
+		self.record.refresh_from_db()
+		self.assertEqual(self.record.email, 'query@example.com')
+		self.assertEqual(self.record.masked_email, 'q***@example.com')
+
+
+class MaskingDataServiceTests(APITestCase):
+	def setUp(self):
+		self.record = make_record()
+
+	@masked_test
+	def test_full_update_regenerates_masks(self):
+		result = update_masking_data_service(self.record.id, full_payload())
+
+		self.assertEqual(result.id, self.record.id)
+		self.record.refresh_from_db()
+		self.assertEqual(self.record.email, 'new@example.com')
+		self.assertEqual(self.record.masked_email, mask_email('new@example.com'))
+		card = CreditCard.objects.get(id=self.record.credit_card_id)
+		self.assertEqual(card.number, '5555-6666-7777-8888')
+		self.assertEqual(card.masked_number, mask_credit_card('5555-6666-7777-8888'))
+
+	@masked_test
+	def test_partial_update_changes_only_provided_fields(self):
+		update_masking_data_service(self.record.id, {'email': 'partial@example.com'})
+
+		self.record.refresh_from_db()
+		self.assertEqual(self.record.email, 'partial@example.com')
+		self.assertEqual(self.record.phone_number, '081-234-5678')
+		self.assertEqual(
+			CreditCard.objects.get(id=self.record.credit_card_id).number, OLD_CARD_NUMBER
+		)
+
+	@masked_test
+	def test_credit_card_update_reuses_existing_row(self):
+		card_id = self.record.credit_card_id
+		update_masking_data_service(self.record.id, {'credit_card': '9999-8888-7777-6666'})
+
+		self.record.refresh_from_db()
+		self.assertEqual(self.record.credit_card_id, card_id)
+
+	def test_unknown_id_raises_404(self):
+		with self.assertRaises(Http404):
+			update_masking_data_service(999999, {'email': 'x@y.com'})
