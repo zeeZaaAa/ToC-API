@@ -38,7 +38,11 @@ ToC-API/
 │       ├── serializers.py
 │       ├── views.py
 │       ├── urls.py
-│       └── migrations/
+│       ├── migrations/
+│       ├── queries/
+│       │   └── masking_data_queries.py
+│       └── services/
+│           └── masking_data_service.py
 ├── shared/
 │   └── masked_and_pattern/
 │       ├── pattern.py
@@ -232,13 +236,13 @@ Ctrl + C
 
 ## 9. Run Tests
 
-Run all Django tests with:
+Run the masking data tests with:
 
 ```bash
-python manage.py test
+python manage.py test src/masking_data
 ```
 
-The project currently contains placeholder test files, so additional application tests should be added as the API functionality is implemented.
+Note: plain `python manage.py test` currently discovers no tests because `src/` is a namespace package — always pass the app path as above.
 
 ## 10. Code Quality
 
@@ -356,7 +360,7 @@ The repository currently has the basic Django/DRF structure in place.
 - Sensitive fields (`email`, `phone_number`, `dob`, `address`, card `number`) are encrypted via `django-encrypted-model-fields`.
 - `PUT` and `PATCH` on `/api/masking-data/<id>/` update the editable fields and regenerate their masked counterparts.
 - `POST` and `DELETE` are placeholders and still need implementation.
-- Serializers are present but are not currently wired into the API views.
+- `masking_data` follows a layered structure: views handle HTTP, serializers validate input, `services/` contains the update business logic (masking, credit-card co-update, transaction), and `queries/` handles all database access.
 - PostgreSQL is configured as the default database.
 - Authentication/authorization and API permissions should be added if the API will be exposed beyond local development.
 
@@ -390,7 +394,18 @@ Request:
 
 Responses:
 
-- `200 OK` — updated. The server stores the encrypted value and regenerates the corresponding masked value for each supplied field.
+- `200 OK` — updated. The server stores the encrypted value and regenerates the corresponding masked value for each supplied field. The response returns the stored masked fields only — raw sensitive values are never echoed back:
+
+  ```json
+  {
+    "id": 1,
+    "masked_email": "n**@example.com",
+    "masked_phone_number": "XXX-XXX-9999",
+    "masked_dob": "DOB:**/**/01",
+    "masked_address": "...",
+    "status": "ACTIVE"
+  }
+  ```
 - `400 Bad Request` — a supplied field fails validation (e.g. invalid email format).
 - `404 Not Found` — no record exists for the given `id`.
 
