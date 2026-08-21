@@ -100,7 +100,6 @@ class MaskingDataCreateSerializer(serializers.ModelSerializer):
 					errors['dob'] = 'Date of birth cannot be in the future.'
 			except ValueError:
 				errors['dob'] = 'Invalid date value (e.g. day or month out of range).'
-
 		if errors:
 			raise serializers.ValidationError(errors)
 
