@@ -38,5 +38,5 @@ def mask_address(address):
 # print(mask_email("k.uy@kmitl.ac.th"))
 # print(mask_credit_card("1212-2222-3551-6701"))
 # print(mask_phone_number("221-222-3551"))
-# print(mask_dob("DOB:12/05/2005"))
-# print(mask_address("Address: 689 ถนนลำดกระบัง แขวงลำดกระบัง เขตลำดกระบัง กรุงเทพฯ"))
+# print(mask_dob("DOB:31/02/2024"))
+# print(mask_address("Address: 689 ซอยลาดกระบัง 19 ถนนลำดกระบัง แขวงลำดกระบัง เขตลำดกระบัง กรุงเทพฯ"))
