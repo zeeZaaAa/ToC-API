@@ -24,12 +24,18 @@ class MaskingDataView(APIView):
 		user = request.user
 		card_serializer = MaskingCreditCardCreateSerializer(data=request.data.get('credit_card', {}))
 		masking_data_serializer = MaskingDataCreateSerializer(data=request.data)
-		card_serializer = MaskingCreditCardCreateSerializer(data=request.data.get('credit_card'))
-  
-		if not card_serializer.is_valid():
-			return Response(card_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-		if not masking_data_serializer.is_valid():
-			return Response(masking_data_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+		is_card_valid = card_serializer.is_valid()
+		is_masking_valid = masking_data_serializer.is_valid()
+
+		if not (is_card_valid and is_masking_valid):
+			errors = {}
+			if not is_card_valid:
+				errors['credit_card'] = card_serializer.errors
+			if not is_masking_valid:
+				errors.update(masking_data_serializer.errors)
+			return Response(errors, status=status.HTTP_400_BAD_REQUEST)
+
 		try:
 			create_masking_data(card_data=card_serializer.validated_data,masking_data=masking_data_serializer.validated_data,user=user)
 		except Exception as e:
