@@ -23,6 +23,18 @@ class MaskingDataView(APIView):
 		result_page = paginator.paginate_queryset(curr_user_datas, request)
 		serializer = MaskingDataSerializer(result_page, many=True)
 
+
+class MaskingDataListView(APIView):
+
+	permission_classes = [IsAuthenticated]
+
+	def get(self, request):
+		curr_user_datas = queries.get_user_masking_data_list(user=request.user)
+
+		paginator = DynamicPageNumberPagination()
+		result_page = paginator.paginate_queryset(curr_user_datas, request)
+		
+		serializer = MaskingDataSerializer(result_page, many=True)
 		return paginator.get_paginated_response(serializer.data)
 
 	def post(self, request):
