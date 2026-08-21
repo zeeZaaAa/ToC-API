@@ -22,10 +22,3 @@ class MaskingCreditCardCreateSerializer(serializers.ModelSerializer):
         if not(CREDIT_CARD_REGEX.fullmatch(value)):
             raise serializers.ValidationError('Invalid credit card format')
         return value
-
-    def create(self, validated_data):
-        raw_number = validated_data.get('number')
-        validated_data['masked_number'] = mask_credit_card(raw_number)
-        
-        return super().create(validated_data)
-    

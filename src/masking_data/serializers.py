@@ -117,27 +117,3 @@ class MaskingDataCreateSerializer(serializers.ModelSerializer):
 			raise serializers.ValidationError(errors)
 
 		return attrs
-
-	def create_new_masked(self, validated_data):
-		return {
-			
-			'masked_email': mask_email(validated_data.get('email')),
-    		'masked_phone_number': mask_phone_number(validated_data.get('phone_number')),
-    		'masked_dob': mask_dob(validated_data.get('dob')),
-    		'masked_address': mask_address(validated_data.get('address'))
-		}
-  
-	def create(self, validated_data):
-		masked_dict = self.create_new_masked(validated_data)
-		validated_data.update(masked_dict)
-  
-		# mock_user, _ = User.objects.get_or_create(	########
-        #     login_email="mock_user@kmitl.ac.th",
-        #     defaults={
-        #         "username": "mock_admin",
-        #         "oauth_id": "mock_oauth_12345"
-        #     }
-        # )
-		# validated_data['user'] = mock_user			#########
-  
-		return super().create(validated_data)
