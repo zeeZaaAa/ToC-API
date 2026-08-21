@@ -14,6 +14,8 @@ from src.credit_cards.serializers import MaskingCreditCardCreateSerializer
 from .models import MaskingData
 from .serializers import MaskingDataCreateSerializer, MaskingDataSerializer
 from django.db import transaction
+from src.masking_data.query.create_masking_data import create_masking_data
+
 
 class MaskingDataView(APIView):
 	def get(self, request):
