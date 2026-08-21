@@ -1,4 +1,4 @@
-from .serializers import MaskingDataSerializer, ActualDataSerializer
+from src.masking_data.serializers import MaskingDataSerializer, ActualDataSerializer
 from rest_framework.pagination import PageNumberPagination
 
 def get_masking_serializer_class(show_actual_data: str):

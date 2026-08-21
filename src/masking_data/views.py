@@ -17,6 +17,15 @@ from .serializers import (
 	MaskingDataUpdateSerializer,
 	MaskingDataSerializer,
 )
+
+from src.masking_data.queries.masking_data_queries import(
+    get_masking_data_by_id,
+    get_user_masking_data_list,
+)
+
+from src.masking_data.services.masking_data_read import(
+    get_masking_serializer_class,
+)
 from .services.masking_data_service import update_masking_data_service
 from django.shortcuts import get_object_or_404
 from rest_framework import status
@@ -28,17 +37,17 @@ from django.db import transaction
 from src.masking_data.queries.create_masking_data import create_masking_data
 from .services import masking_data as masking_data_service
 
-class MaskingDataListView(APIView):
+class MaskingDataView(APIView):
     permission_classes = [IsAuthenticated]
-    
-    def get(self, request):
-        curr_user_datas = queries.get_user_masking_data_list(user=request.user)
-        
-        paginator = DynamicPageNumberPagination()
-        result_page = paginator.paginate_queryset(curr_user_datas, request)
-        serializer = MaskingDataSerializer(result_page, many=True)
 
-        return paginator.get_paginated_response(serializer.data)
+    def get(self, request, id):
+        show_actual_data = request.GET.get('show_actual_data')
+        
+        select_masked_data = get_masking_data_by_id(user=request.user, masking_data_id=id)
+        SerializerClass = get_masking_serializer_class(show_actual_data)
+        
+        serializer = SerializerClass(select_masked_data)
+        return Response(serializer.data)
 
     def post(self, request):
         user = request.user
@@ -91,24 +100,14 @@ class MaskingDataListView(APIView):
         instance = update_masking_data_service(id, serializer.validated_data)
         return Response(MaskingDataResponseSerializer(instance).data)
 
-
-class MaskingDataView(APIView):
+class MaskingDataListView(APIView):
     permission_classes = [IsAuthenticated]
-
-    def get(self, request, id):
-        show_actual_data = request.GET.get('show_actual_data')
+    
+    def get(self, request):
+        curr_user_datas = get_user_masking_data_list(user=request.user)
         
-        select_masked_data = queries.get_masking_data_by_id(user=request.user, masking_data_id=id)
-        SerializerClass = services.get_masking_serializer_class(show_actual_data)
-        
-        serializer = SerializerClass(select_masked_data)
-        return Response(serializer.data)
+        paginator = DynamicPageNumberPagination()
+        result_page = paginator.paginate_queryset(curr_user_datas, request)
+        serializer = MaskingDataSerializer(result_page, many=True)
 
-    def put(self, request, id):
-        pass
-
-    def patch(self, request, id):
-        pass
-
-    def delete(self, request, id):
-        pass
+        return paginator.get_paginated_response(serializer.data)

@@ -7,12 +7,6 @@ from shared.masked_and_pattern.pattern import (
 from shared.masked_and_pattern.masked import (
 	mask_credit_card
 )
-
-class CreditCardSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = CreditCard
-        fields = ['id', 'masked_number']
         
 class MaskingCreditCardCreateSerializer(serializers.ModelSerializer):
     class Meta:
