@@ -1,3 +1,4 @@
+import json
 import unittest
 from unittest import mock
 
@@ -36,7 +37,9 @@ OLD_CARD_NUMBER = '1234-1234-1234-1234'
 
 
 def make_record(**overrides):
-	user = User.objects.create_user(login_email='test@example.com', password='pass')
+	user = User(login_email='test@example.com')
+	user.set_password('pass')
+	user.save()
 	card = CreditCard.objects.create(number=OLD_CARD_NUMBER, masked_number='1234-****-****-1234')
 	defaults = {
 		'user': user,
@@ -118,6 +121,88 @@ class MaskingDataUpdateAPITests(APITestCase):
 				msg=f'{field}={bad_value!r} should be rejected',
 			)
 			self.assertIn(field, response.data)
+
+	# ---- DOB calendar validation ----
+
+	def test_put_rejects_impossible_calendar_dates(self):
+		for bad_dob in ('DOB:31/02/2024', 'DOB:29/02/2023', 'DOB:31/04/2024'):
+			response = self.client.put(self.url, full_payload(dob=bad_dob), format='json')
+			self.assertEqual(
+				response.status_code,
+				status.HTTP_400_BAD_REQUEST,
+				msg=f'{bad_dob} should be rejected',
+			)
+			self.assertIn('dob', response.data)
+
+	@masked_test
+	def test_patch_accepts_leap_day_in_leap_year(self):
+		response = self.client.patch(self.url, {'dob': 'DOB:29/02/2024'}, format='json')
+
+		self.assertEqual(response.status_code, status.HTTP_200_OK)
+		self.record.refresh_from_db()
+		self.assertEqual(self.record.dob, 'DOB:29/02/2024')
+
+	# ---- input length limits ----
+
+	def test_put_rejects_over_length_fields(self):
+		cases = {
+			'email': 'a' * 255 + '@example.com',
+			'phone_number': '0' * 51,
+			'dob': 'D' * 51,
+			'address': 'Address: 1 x ' + 'y' * 500,
+			'credit_card': '1' * 101,
+		}
+		for field, long_value in cases.items():
+			response = self.client.put(self.url, full_payload(**{field: long_value}), format='json')
+			self.assertEqual(
+				response.status_code,
+				status.HTTP_400_BAD_REQUEST,
+				msg=f'{field} over max_length should be rejected',
+			)
+
+	# ---- response privacy & shape ----
+
+	@masked_test
+	def test_update_responses_never_contain_plaintext(self):
+		new_email = 'fresh@example.com'
+		new_card = '5555-6666-7777-8888'
+
+		put_response = self.client.put(
+			self.url, full_payload(email=new_email, credit_card=new_card), format='json'
+		)
+		patch_response = self.client.patch(self.url, {'phone_number': '077-777-7777'}, format='json')
+
+		rendered = json.dumps([put_response.data, patch_response.data])
+		for secret in (new_email, new_card, OLD_EMAIL, OLD_CARD_NUMBER, '077-777-7777'):
+			self.assertNotIn(secret, rendered)
+
+	def test_response_exposes_only_safe_fields_with_card_block(self):
+		response = self.client.patch(self.url, {'email': 'shape@example.com'}, format='json')
+
+		self.assertEqual(response.status_code, status.HTTP_200_OK)
+		self.assertEqual(
+			set(response.data.keys()),
+			{
+				'id',
+				'masked_email',
+				'masked_phone_number',
+				'masked_dob',
+				'masked_address',
+				'status',
+				'credit_card',
+			},
+		)
+		self.assertEqual(set(response.data['credit_card'].keys()), {'id', 'masked_number'})
+		self.assertEqual(response.data['credit_card']['id'], self.record.credit_card_id)
+
+	@masked_test
+	def test_patch_response_returns_mask_for_new_card_number(self):
+		new_number = '9999-8888-7777-6666'
+
+		response = self.client.patch(self.url, {'credit_card': new_number}, format='json')
+
+		self.assertEqual(response.status_code, status.HTTP_200_OK)
+		self.assertEqual(response.data['credit_card']['masked_number'], mask_credit_card(new_number))
 
 	# ---- PATCH happy path ----
 

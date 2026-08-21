@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from rest_framework import serializers
 
 from shared.masked_and_pattern.pattern import (
@@ -7,6 +9,7 @@ from shared.masked_and_pattern.pattern import (
 	EMAIL_REGEX,
 	PHONE_NUMBER_REGEX,
 )
+from src.credit_cards.models import CreditCard
 
 from .models import MaskingData
 
@@ -18,11 +21,11 @@ class MaskingDataSerializer(serializers.ModelSerializer):
 
 
 class MaskingDataUpdateSerializer(serializers.Serializer):
-	email = serializers.CharField()
-	phone_number = serializers.CharField()
-	dob = serializers.CharField()
-	address = serializers.CharField()
-	credit_card = serializers.CharField()
+	email = serializers.CharField(max_length=255)
+	phone_number = serializers.CharField(max_length=50)
+	dob = serializers.CharField(max_length=50)
+	address = serializers.CharField(max_length=500)
+	credit_card = serializers.CharField(max_length=100)
 
 	def validate(self, attrs):
 		errors = {}
@@ -36,12 +39,26 @@ class MaskingDataUpdateSerializer(serializers.Serializer):
 		for field, regex, message in checks:
 			if field in attrs and not regex.fullmatch(attrs[field]):
 				errors[field] = message
+		if 'dob' in attrs and 'dob' not in errors:
+			try:
+				# ponytail: calendar-validity check only; timezone is intentionally irrelevant
+				datetime.strptime(attrs['dob'], 'DOB:%d/%m/%Y')  # noqa: DTZ007
+			except ValueError:
+				errors['dob'] = 'Invalid date of birth.'
 		if errors:
 			raise serializers.ValidationError(errors)
 		return attrs
 
 
+class MaskedCreditCardSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = CreditCard
+		fields = ['id', 'masked_number']
+
+
 class MaskingDataResponseSerializer(serializers.ModelSerializer):
+	credit_card = MaskedCreditCardSerializer(read_only=True)
+
 	class Meta:
 		model = MaskingData
 		fields = [
@@ -51,4 +68,5 @@ class MaskingDataResponseSerializer(serializers.ModelSerializer):
 			'masked_dob',
 			'masked_address',
 			'status',
+			'credit_card',
 		]

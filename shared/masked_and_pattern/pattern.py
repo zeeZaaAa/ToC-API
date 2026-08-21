@@ -22,13 +22,9 @@ DOB_PATTERN = (
 )
 
 ADDRESS_PATTERN = (
-	r'(^Address:\s*)'  # 1
+	r'(Address:\s*)'  # 1
 	r'(\d+(?:/\d+)?)'  # 2
-	r'(\s+(?:ซอย.+?\s+)?'  # 3
-	r'ถนน.+?\s+'
-	r'(?:แขวง|ตำบล).+?\s+'
-	r'(?:เขต|อำเภอ).+?\s+'
-	r'.+)$'
+	r'(\s+\S.*)$'  # 3
 )
 
 CREDIT_CARD_REGEX = re.compile(CREDIT_CARD_PATTERN)

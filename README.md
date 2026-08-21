@@ -403,13 +403,19 @@ Responses:
     "masked_phone_number": "XXX-XXX-9999",
     "masked_dob": "DOB:**/**/01",
     "masked_address": "...",
-    "status": "ACTIVE"
+    "status": "ACTIVE",
+    "credit_card": {
+      "id": 10,
+      "masked_number": "XXXX-XXXX-XXXX-8888"
+    }
   }
   ```
-- `400 Bad Request` — a supplied field fails validation (e.g. invalid email format).
+- `400 Bad Request` — a supplied field fails validation (e.g. invalid email format, impossible calendar date such as `DOB:31/02/2024`, or a field over its maximum length).
 - `404 Not Found` — no record exists for the given `id`.
 
 Writable fields: `email`, `phone_number`, `dob`, `address`, `credit_card`. The masked fields, `user`, `status`, and timestamps are server-controlled and cannot be set by the client. Updating `credit_card` reuses the existing `CreditCard` object rather than creating a new one.
+
+Validation limits: `dob` must be a real calendar date (`DOB:DD/MM/YYYY`), and field lengths are capped at the model column sizes (email 255, phone/dob 50, address 500, credit card 100).
 
 ## Quick Start
 
