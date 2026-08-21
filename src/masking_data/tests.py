@@ -126,7 +126,10 @@ class MaskingDataUpdateAPITests(APITestCase):
 			response = self.client.patch(self.url, {field: value}, format='json')
 			self.assertEqual(response.status_code, status.HTTP_200_OK, msg=f'PATCH {field}')
 			self.record.refresh_from_db()
-			self.assertEqual(getattr(self.record, field), value, msg=f'field {field}')
+			if field == 'credit_card':
+				self.assertEqual(self.record.credit_card.number, value, msg='field credit_card')
+			else:
+				self.assertEqual(getattr(self.record, field), value, msg=f'field {field}')
 
 	def test_patch_missing_unrelated_fields_succeeds(self):
 		response = self.client.patch(self.url, {'email': 'patch@example.com'}, format='json')
