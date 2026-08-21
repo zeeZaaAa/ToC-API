@@ -16,15 +16,15 @@ PHONE_NUMBER_PATTERN = (
 )
 
 DOB_PATTERN = (
-	r'^DOB:(0[1-9]|[12][0-9]|3[01])'  # 1
-	r'/(0[1-9]|1[0-2])'  # 1
-	r'(/(?!0000)[0-9]{2})([0-9]{2})$'  # 3
+	r'^DOB:(0[1-9]|[12][0-9]|3[01])'
+	r'/(0[1-9]|1[0-2])'
+	r'(/(?!0000)[0-9]{2})([0-9]{2})$'
 )
 
 ADDRESS_PATTERN = (
-	r'(Address:\s*)'  # 1
-	r'(\d+(?:/\d+)?)'  # 2
-	r'(\s+\S.*)$'  # 3
+	r'(Address:\s*)'
+	r'(\d+(?:/\d+)?)'
+	r'(\s+\S.*)$'
 )
 
 CREDIT_CARD_REGEX = re.compile(CREDIT_CARD_PATTERN)

@@ -41,8 +41,7 @@ class MaskingDataUpdateSerializer(serializers.Serializer):
 				errors[field] = message
 		if 'dob' in attrs and 'dob' not in errors:
 			try:
-				# ponytail: calendar-validity check only; timezone is intentionally irrelevant
-				datetime.strptime(attrs['dob'], 'DOB:%d/%m/%Y')  # noqa: DTZ007
+				datetime.strptime(attrs['dob'], 'DOB:%d/%m/%Y')
 			except ValueError:
 				errors['dob'] = 'Invalid date of birth.'
 		if errors:
