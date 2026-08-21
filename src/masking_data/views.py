@@ -25,7 +25,6 @@ class MaskingDataView(APIView):
 		card_serializer = MaskingCreditCardCreateSerializer(data=request.data.get('credit_card', {}))
 		masking_data_serializer = MaskingDataCreateSerializer(data=request.data)
 		card_serializer = MaskingCreditCardCreateSerializer(data=request.data.get('credit_card'))
-		masking_data_serializer = MaskingDataCreateSerializer(data=request.data)
   
 		if not card_serializer.is_valid():
 			return Response(card_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
