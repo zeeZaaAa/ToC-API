@@ -1,4 +1,4 @@
-from django.shortcuts import get_object_or_404
+from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
@@ -22,6 +22,8 @@ from .models import MaskingData
 from .serializers import MaskingDataCreateSerializer, MaskingDataSerializer
 from django.db import transaction
 from src.masking_data.query.create_masking_data import create_masking_data
+
+from .services import masking_data as masking_data_service
 
 
 class MaskingDataView(APIView):
@@ -69,7 +71,15 @@ class MaskingDataView(APIView):
 		return Response(MaskingDataResponseSerializer(instance).data)
 
 	def delete(self, request, id):
-		pass
+		masking_data = masking_data_service.delete(id)
+
+		if masking_data is None:
+			return Response({'message': 'Data not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+		return Response(
+			{'id': masking_data.id, 'message': 'Data was deleted successfully.'},
+			status=status.HTTP_200_OK,
+		)
 
 	def patch(self, request, id):
 		serializer = MaskingDataUpdateSerializer(data=request.data, partial=True)
