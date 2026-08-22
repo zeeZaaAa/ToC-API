@@ -1,12 +1,9 @@
 from rest_framework import serializers
 
+from shared.masked_and_pattern.pattern import CREDIT_CARD_REGEX
+
 from .models import CreditCard
-from shared.masked_and_pattern.pattern import (
-    CREDIT_CARD_REGEX
-)
-from shared.masked_and_pattern.masked import (
-	mask_credit_card
-)
+
 
 class CreditCardSerializer(serializers.ModelSerializer):
 

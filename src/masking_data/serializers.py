@@ -1,5 +1,6 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
+from django.utils import timezone as django_timezone
 from rest_framework import serializers
 
 from shared.masked_and_pattern.pattern import (
@@ -12,21 +13,8 @@ from shared.masked_and_pattern.pattern import (
 from src.credit_cards.models import CreditCard
 
 from .models import MaskingData
-from shared.masked_and_pattern.pattern import (
-	ADDRESS_REGEX,
-	DOB_REGEX,
-	EMAIL_REGEX,
-	PHONE_NUMBER_REGEX,
-)
-from shared.masked_and_pattern.masked import (
-	mask_address,
- 	mask_dob,
-	mask_phone_number,
-	mask_email
-)
-from .models import MaskingData
-# User = get_user_model() ##################################
-from datetime import datetime
+
+
 class MaskingDataSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = MaskingData
@@ -54,7 +42,7 @@ class MaskingDataUpdateSerializer(serializers.Serializer):
 				errors[field] = message
 		if 'dob' in attrs and 'dob' not in errors:
 			try:
-				datetime.strptime(attrs['dob'], 'DOB:%d/%m/%Y')
+				datetime.strptime(attrs['dob'], 'DOB:%d/%m/%Y').replace(tzinfo=timezone.utc)
 			except ValueError:
 				errors['dob'] = 'Invalid date of birth.'
 		if errors:
@@ -82,13 +70,14 @@ class MaskingDataResponseSerializer(serializers.ModelSerializer):
 			'status',
 			'credit_card',
 		]
+
+
 class MaskingDataCreateSerializer(serializers.ModelSerializer):
-    
 	class Meta:
 		model = MaskingData
-		fields = ['email','phone_number','dob','address','credit_card']
-		read_only_fields = ['credit_card','user']
-	
+		fields = ['email', 'phone_number', 'dob', 'address', 'credit_card']
+		read_only_fields = ['credit_card', 'user']
+
 	def validate(self, attrs):
 		errors = {}
 
@@ -104,15 +93,14 @@ class MaskingDataCreateSerializer(serializers.ModelSerializer):
 			raw_dob = attrs.get('dob', '')
 			date_str = raw_dob.replace('DOB:', '').strip()
 			try:
-				dob_date = datetime.strptime(date_str, '%d/%m/%Y').date()
-				if dob_date > datetime.now().date():
+				dob_date = (
+					datetime.strptime(date_str, '%d/%m/%Y').replace(tzinfo=timezone.utc).date()
+				)
+				if dob_date > django_timezone.localdate():
 					errors['dob'] = 'Date of birth cannot be in the future.'
 			except ValueError:
 				errors['dob'] = 'Invalid date value (e.g. day or month out of range).'
-  
-  
-  
-  
+
 		if errors:
 			raise serializers.ValidationError(errors)
 

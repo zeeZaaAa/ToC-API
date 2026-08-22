@@ -1,13 +1,9 @@
 from django.db import transaction
-from src.credit_cards.models import CreditCard
-from src.masking_data.models import MaskingData
+
+from shared.masked_and_pattern.masked import mask_address, mask_dob, mask_email, mask_phone_number
 from src.credit_cards.queries.create_credit_card import create_credit_card
-from shared.masked_and_pattern.masked import (
-    mask_email,
-    mask_phone_number,
-    mask_dob,
-    mask_address
-)
+from src.masking_data.models import MaskingData
+
 
 def create_masking_data(card_data: dict, masking_data: dict,user) -> MaskingData:
 
