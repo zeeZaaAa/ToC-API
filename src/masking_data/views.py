@@ -1,29 +1,23 @@
+from django.core.exceptions import ValidationError
+from django.db import DatabaseError
+from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework import status
+
 from src.credit_cards.models import CreditCard
 from src.credit_cards.serializers import MaskingCreditCardCreateSerializer
-from .models import MaskingData
-from .serializers import MaskingDataCreateSerializer, MaskingDataSerializer
-from django.db import transaction
-from src.masking_data.query.create_masking_data import create_masking_data
+from src.masking_data.queries.create_masking_data import create_masking_data
 
+from .models import MaskingData
 from .serializers import (
+	MaskingDataCreateSerializer,
 	MaskingDataResponseSerializer,
+	MaskingDataSerializer,
 	MaskingDataUpdateSerializer,
 )
-from .services.masking_data_service import update_masking_data_service
-from django.shortcuts import get_object_or_404
-from rest_framework import status
-from src.credit_cards.models import CreditCard
-from src.credit_cards.serializers import MaskingCreditCardCreateSerializer
-from .models import MaskingData
-from .serializers import MaskingDataCreateSerializer, MaskingDataSerializer
-from django.db import transaction
-from src.masking_data.query.create_masking_data import create_masking_data
-
 from .services import masking_data as masking_data_service
+from .services.masking_data_service import update_masking_data_service
 
 
 class MaskingDataView(APIView):
@@ -36,9 +30,11 @@ class MaskingDataView(APIView):
 		return Response(serializer.data)
 
 	def post(self, request):
-     
+
 		user = request.user
-		card_serializer = MaskingCreditCardCreateSerializer(data=request.data.get('credit_card', {}))
+		card_serializer = MaskingCreditCardCreateSerializer(
+			data=request.data.get('credit_card', {})
+		)
 		masking_data_serializer = MaskingDataCreateSerializer(data=request.data)
 
 		is_card_valid = card_serializer.is_valid()
@@ -53,16 +49,17 @@ class MaskingDataView(APIView):
 			return Response(errors, status=status.HTTP_400_BAD_REQUEST)
 
 		try:
-			create_masking_data(card_data=card_serializer.validated_data,masking_data=masking_data_serializer.validated_data,user=user)
-		except Exception as e:
+			create_masking_data(
+				card_data=card_serializer.validated_data,
+				masking_data=masking_data_serializer.validated_data,
+				user=user,
+			)
+		except (ValidationError, DatabaseError) as e:
 			return Response(
-                {"error": "Failed to create data", "details": str(e)}, 
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-		return Response({
-            "message": "Created successfully",
-        }, status=status.HTTP_201_CREATED)
-		
+				{'error': 'Failed to create data', 'details': str(e)},
+				status=status.HTTP_400_BAD_REQUEST,
+			)
+		return Response({'message': 'Created successfully'}, status=status.HTTP_201_CREATED)
 
 	def put(self, request, id):
 		serializer = MaskingDataUpdateSerializer(data=request.data)
