@@ -5,7 +5,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .serializers import ActualDataSerializer
-from . import queries, services
+from .services import DynamicPageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 
 from src.credit_cards.models import CreditCard
@@ -58,29 +58,29 @@ from src.masking_data.queries.masking_data_queries import (
 )
 
 class MaskingDataListView(APIView):
-    
-    permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-        curr_user_datas = get_user_masking_data_list(user=request.user)
-        
-        paginator = DynamicPageNumberPagination()
-        result_page = paginator.paginate_queryset(curr_user_datas, request)
+	permission_classes = [IsAuthenticated]
+
+	def get(self, request):
+		curr_user_datas = get_user_masking_data_list(user=request.user)
+
+		paginator = DynamicPageNumberPagination()
+		result_page = paginator.paginate_queryset(curr_user_datas, request)
 		
-        serializer = MaskingDataSerializer(result_page, many=True)
-        return paginator.get_paginated_response(serializer.data)
-    
-    def post(self, request):
-        pass
+		serializer = MaskingDataSerializer(result_page, many=True)
+		return paginator.get_paginated_response(serializer.data)
 
-    def put(self, request, id):
-        pass
+	def post(self, request):
+		pass
 
-    def delete(self, request, id):
-        pass
+	def put(self, request, id):
+		pass
 
-    def patch(self, request, id):
-        pass
+	def delete(self, request, id):
+		pass
+
+	def patch(self, request, id):
+		pass
 
 class MaskingDataView(APIView):
     permission_classes = [IsAuthenticated]
@@ -147,3 +147,5 @@ class MaskingDataView(APIView):
         serializer.is_valid(raise_exception=True)
         instance = update_masking_data_service(id, serializer.validated_data)
         return Response(MaskingDataResponseSerializer(instance).data)
+        pass
+    
