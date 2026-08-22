@@ -13,7 +13,6 @@ from .serializers import MaskingDataCreateSerializer, MaskingDataSerializer
 from django.db import transaction
 from .serializers import ActualDataSerializer
 from .services import DynamicPageNumberPagination
-from . import queries, services
 from rest_framework.permissions import IsAuthenticated
 
 from .models import MaskingData
@@ -44,6 +43,41 @@ from django.db import transaction
 from src.masking_data.queries.create_masking_data import create_masking_data
 from .services import masking_data as masking_data_service
 from .services.masking_data_service import update_masking_data_service
+from .services.masking_data_service import (
+    update_masking_data_service,
+    get_masking_serializer_class,
+                                            )
+
+from src.masking_data.queries.masking_data_queries import (
+	get_masking_data_by_id,
+	update_masking_data,
+    get_user_masking_data_list,
+)
+
+class MaskingDataListView(APIView):
+
+	permission_classes = [IsAuthenticated]
+
+	def get(self, request):
+		curr_user_datas = get_user_masking_data_list(user=request.user)
+
+		paginator = DynamicPageNumberPagination()
+		result_page = paginator.paginate_queryset(curr_user_datas, request)
+		
+		serializer = MaskingDataSerializer(result_page, many=True)
+		return paginator.get_paginated_response(serializer.data)
+
+	def post(self, request):
+		pass
+
+	def put(self, request, id):
+		pass
+
+	def delete(self, request, id):
+		pass
+
+	def patch(self, request, id):
+		pass
 
 class MaskingDataView(APIView):
     permission_classes = [IsAuthenticated]
@@ -110,15 +144,3 @@ class MaskingDataView(APIView):
         serializer.is_valid(raise_exception=True)
         instance = update_masking_data_service(id, serializer.validated_data)
         return Response(MaskingDataResponseSerializer(instance).data)
-
-class MaskingDataListView(APIView):
-    permission_classes = [IsAuthenticated]
-    
-    def get(self, request):
-        curr_user_datas = get_user_masking_data_list(user=request.user)
-        
-        paginator = DynamicPageNumberPagination()
-        result_page = paginator.paginate_queryset(curr_user_datas, request)
-        serializer = MaskingDataSerializer(result_page, many=True)
-
-        return paginator.get_paginated_response(serializer.data)
