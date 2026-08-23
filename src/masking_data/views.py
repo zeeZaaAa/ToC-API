@@ -147,11 +147,8 @@ class MaskingDataView(APIView):
 			{'id': masking_data.id, 'message': 'Data was deleted successfully.'},
 			status=status.HTTP_200_OK,
 		)
-
     def patch(self, request, id):
         serializer = MaskingDataUpdateSerializer(data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         instance = update_masking_data_service(id, serializer.validated_data)
         return Response(MaskingDataResponseSerializer(instance).data)
-        pass
-    
