@@ -40,7 +40,7 @@ class CookieTokenRefreshView(SimpleJWTTokenRefreshView):
                 key='rt',
                 value=data['refresh'],
                 httponly=True,
-                secure=False,  # Set to True in production (HTTPS)
+                secure=os.getenv('DEBUG', 'False') == 'True',  # Set to True in production (HTTPS)
                 samesite='Lax',
                 max_age=12 * 3600,
             )
@@ -125,7 +125,7 @@ class GoogleCallbackView(APIView):
                 key='rt',
                 value=tokens['refresh'],
                 httponly=True,
-                secure=False,  # Set to True in production (HTTPS)
+                secure=os.getenv('DEBUG', 'False') == 'True',  # Set to True in production (HTTPS)
                 samesite='Lax',
                 max_age=12 * 3600,
             )
