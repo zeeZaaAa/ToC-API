@@ -1,5 +1,7 @@
-from src.masking_data.serializers import MaskingDataSerializer, ActualDataSerializer
 from rest_framework.pagination import PageNumberPagination
+
+from src.masking_data.serializers import ActualDataSerializer, MaskingDataSerializer
+
 
 def get_masking_serializer_class(show_actual_data: str):
     if show_actual_data and show_actual_data.lower() == 'true':

@@ -2,64 +2,25 @@ from django.core.exceptions import ValidationError
 from django.db import DatabaseError
 from django.shortcuts import get_object_or_404
 from rest_framework import permissions, status
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework import status
-from src.credit_cards.models import CreditCard
-from src.credit_cards.serializers import MaskingCreditCardCreateSerializer
-from .models import MaskingData
-from .serializers import MaskingDataCreateSerializer, MaskingDataSerializer
-from django.db import transaction
-from .serializers import ActualDataSerializer
-from rest_framework.permissions import IsAuthenticated
 
 from src.authentication.authentication import CustomJWTAuthentication
 from src.credit_cards.models import CreditCard
 from src.credit_cards.serializers import MaskingCreditCardCreateSerializer
 from src.masking_data.queries.create_masking_data import create_masking_data
-from .models import MaskingData
-from .serializers import MaskingDataCreateSerializer, MaskingDataSerializer
-from django.db import transaction
-from .serializers import ActualDataSerializer
-from rest_framework.permissions import IsAuthenticated
 
 from .models import MaskingData
 from .serializers import (
-    MaskingDataCreateSerializer,
-    MaskingDataResponseSerializer,
-    MaskingDataSerializer,
-    MaskingDataUpdateSerializer,
+	MaskingDataCreateSerializer,
+	MaskingDataResponseSerializer,
+	MaskingDataSerializer,
+	MaskingDataUpdateSerializer,
 )
-
-from src.masking_data.queries.masking_data_queries import(
-    get_masking_data_by_id,
-    get_user_masking_data_list,
-)
-
-from src.masking_data.services.masking_data_read import(
-    get_masking_serializer_class,
-    DynamicPageNumberPagination,
-)
-from .services.masking_data_service import update_masking_data_service
-from django.shortcuts import get_object_or_404
-from rest_framework import status
-from src.credit_cards.models import CreditCard
-from src.credit_cards.serializers import MaskingCreditCardCreateSerializer
-from .models import MaskingData
-from .serializers import MaskingDataCreateSerializer, MaskingDataSerializer
-from django.db import transaction
-from src.masking_data.queries.create_masking_data import create_masking_data
 from .services import masking_data as masking_data_service
 from .services.masking_data_service import update_masking_data_service
-from .services.masking_data_service import (
-    update_masking_data_service,
-                                            )
 
-from src.masking_data.queries.masking_data_queries import (
-	get_masking_data_by_id,
-	update_masking_data,
-    get_user_masking_data_list,
-)
 
 class MaskingDataListView(APIView):
 
