@@ -100,8 +100,23 @@ class MaskingDataCreateSerializer(serializers.ModelSerializer):
 					errors['dob'] = 'Date of birth cannot be in the future.'
 			except ValueError:
 				errors['dob'] = 'Invalid date value (e.g. day or month out of range).'
-
 		if errors:
 			raise serializers.ValidationError(errors)
 
 		return attrs
+
+class ActualDataSerializer(serializers.ModelSerializer):
+
+	credit_card = MaskedCreditCardSerializer(read_only=True)
+	class Meta:
+		model = MaskingData
+		fields = ['id']
+		fields = [
+			'id', 
+			'user', 
+			'credit_card', 
+			'email', 
+			'phone_number', 
+			'dob', 
+			'address'
+			]
