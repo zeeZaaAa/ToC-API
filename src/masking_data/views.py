@@ -11,7 +11,6 @@ from .models import MaskingData
 from .serializers import MaskingDataCreateSerializer, MaskingDataSerializer
 from django.db import transaction
 from .serializers import ActualDataSerializer
-from .services import DynamicPageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 
 from src.credit_cards.models import CreditCard
@@ -54,7 +53,6 @@ from .services import masking_data as masking_data_service
 from .services.masking_data_service import update_masking_data_service
 from .services.masking_data_service import (
     update_masking_data_service,
-    get_masking_serializer_class,
                                             )
 
 from src.masking_data.queries.masking_data_queries import (
