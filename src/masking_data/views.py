@@ -1,15 +1,12 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-<<<<<<< HEAD
 from rest_framework import status
 from src.credit_cards.models import CreditCard
 from src.credit_cards.serializers import MaskingCreditCardCreateSerializer
 from .models import MaskingData
 from .serializers import MaskingDataCreateSerializer, MaskingDataSerializer
 from django.db import transaction
-=======
->>>>>>> efb34650d2fc6fbeb911d9f6e9dd8feef704a54c
 from .serializers import ActualDataSerializer
 from .services import DynamicPageNumberPagination
 from rest_framework.permissions import IsAuthenticated
@@ -18,7 +15,6 @@ from .serializers import (
 	MaskingDataResponseSerializer,
 	MaskingDataUpdateSerializer,
 	MaskingDataSerializer,
-<<<<<<< HEAD
 )
 
 from src.masking_data.queries.masking_data_queries import(
@@ -39,9 +35,6 @@ from .serializers import MaskingDataCreateSerializer, MaskingDataSerializer
 from django.db import transaction
 from src.masking_data.queries.create_masking_data import create_masking_data
 from .services import masking_data as masking_data_service
-=======
-)
->>>>>>> efb34650d2fc6fbeb911d9f6e9dd8feef704a54c
 from .services.masking_data_service import (
     update_masking_data_service,
     get_masking_serializer_class,
