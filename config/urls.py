@@ -6,6 +6,7 @@ urlpatterns = [
 		'api/',
 		include(
 			[
+				path('auth/', include('src.authentication.urls')),
 				path('user/', include('src.users.urls')),
 				path('masking-data/', include('src.masking_data.urls')),
 			]
