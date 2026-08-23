@@ -16,7 +16,7 @@ from .services import GoogleOAuthProvider, OAuthUserService
 logger = logging.getLogger(__name__)
 
 
-def set_auth_cookies(response, access_token: str, refresh_token: str = None):
+def set_auth_cookies(response, access_token: str, refresh_token: str | None = None):
     """Helper utility to set both access and refresh cookies consistently."""
     is_debug = os.getenv('DEBUG', 'False') == 'True'
     cookie_domain = os.getenv('COOKIE_DOMAIN', None)
