@@ -10,17 +10,17 @@ from rest_framework.test import APITestCase
 from src.credit_cards.models import CreditCard
 from src.masking_data.models import MaskingData
 from src.masking_data.queries.masking_data_queries import (
-	get_masking_data_by_id,
-	update_masking_data,
+    get_masking_data_by_id,
+    update_masking_data,
 )
 from src.masking_data.services.masking_data_service import update_masking_data_service
 
 try:
-	from shared.masked_and_pattern.masked import mask_credit_card, mask_email
+    from shared.masked_and_pattern.masked import mask_credit_card, mask_email
 
-	HAS_MASK = True
+    HAS_MASK = True
 except ImportError:
-	HAS_MASK = False
+    HAS_MASK = False
 
 masked_test = unittest.skipUnless(HAS_MASK, 'masked.py not yet available (Create branch)')
 
@@ -28,7 +28,7 @@ User = get_user_model()
 
 
 class BoomError(Exception):
-	pass
+    pass
 
 
 VALID_ADDRESS = 'Address: 123 ถนนสุขุมวิท แขวงคลองเตย เขตคลองเตย กรุงเทพมหานคร'
@@ -37,330 +37,334 @@ OLD_CARD_NUMBER = '1234-1234-1234-1234'
 
 
 def make_record(**overrides):
-	user = User(login_email='test@example.com')
-	user.set_password('pass')
-	user.save()
-	card = CreditCard.objects.create(number=OLD_CARD_NUMBER, masked_number='1234-****-****-1234')
-	defaults = {
-		'user': user,
-		'credit_card': card,
-		'email': OLD_EMAIL,
-		'phone_number': '081-234-5678',
-		'dob': 'DOB:01/01/2000',
-		'address': VALID_ADDRESS,
-		'masked_email': 'o***@example.com',
-		'masked_phone_number': '081-***-****',
-		'masked_dob': 'DOB:**/01/2000',
-		'masked_address': 'Address: 123 ...',
-	}
-	defaults.update(overrides)
-	return MaskingData.objects.create(**defaults)
+    user = User(login_email='test@example.com')
+    user.set_password('pass')
+    user.save()
+    card = CreditCard.objects.create(number=OLD_CARD_NUMBER, masked_number='1234-****-****-1234')
+    defaults = {
+        'user': user,
+        'credit_card': card,
+        'email': OLD_EMAIL,
+        'phone_number': '081-234-5678',
+        'dob': 'DOB:01/01/2000',
+        'address': VALID_ADDRESS,
+        'masked_email': 'o***@example.com',
+        'masked_phone_number': '081-***-****',
+        'masked_dob': 'DOB:**/01/2000',
+        'masked_address': 'Address: 123 ...',
+    }
+    defaults.update(overrides)
+    return MaskingData.objects.create(**defaults)
 
 
 def full_payload(**overrides):
-	payload = {
-		'email': 'new@example.com',
-		'phone_number': '099-999-9999',
-		'dob': 'DOB:02/02/2001',
-		'address': 'Address: 45/2 ซอยสุขุมวิท 22 ถนนสุขุมวิท แขวงคลองเตย เขตคลองเตย กรุงเทพมหานคร',
-		'credit_card': '5555-6666-7777-8888',
-	}
-	payload.update(overrides)
-	return payload
+    payload = {
+        'email': 'new@example.com',
+        'phone_number': '099-999-9999',
+        'dob': 'DOB:02/02/2001',
+        'address': 'Address: 45/2 ซอยสุขุมวิท 22 ถนนสุขุมวิท แขวงคลองเตย เขตคลองเตย กรุงเทพมหานคร',
+        'credit_card': '5555-6666-7777-8888',
+    }
+    payload.update(overrides)
+    return payload
 
 
 class MaskingDataUpdateAPITests(APITestCase):
-	def setUp(self):
-		self.record = make_record()
-		self.url = f'/api/masking-data/{self.record.id}/'
+    def setUp(self):
+        self.record = make_record()
+        self.url = f'/api/masking-data/{self.record.id}/'
 
-	# ---- PUT happy path ----
+    # ---- PUT happy path ----
 
-	def test_put_updates_all_editable_fields(self):
-		response = self.client.put(self.url, full_payload(), format='json')
+    def test_put_updates_all_editable_fields(self):
+        response = self.client.put(self.url, full_payload(), format='json')
 
-		self.assertEqual(response.status_code, status.HTTP_200_OK)
-		self.record.refresh_from_db()
-		self.assertEqual(self.record.email, 'new@example.com')
-		self.assertEqual(self.record.phone_number, '099-999-9999')
-		self.assertEqual(self.record.dob, 'DOB:02/02/2001')
-		self.assertEqual(
-			self.record.address,
-			'Address: 45/2 ซอยสุขุมวิท 22 ถนนสุขุมวิท แขวงคลองเตย เขตคลองเตย กรุงเทพมหานคร',
-		)
-		card = CreditCard.objects.get(id=self.record.credit_card_id)
-		self.assertEqual(card.number, '5555-6666-7777-8888')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.record.refresh_from_db()
+        self.assertEqual(self.record.email, 'new@example.com')
+        self.assertEqual(self.record.phone_number, '099-999-9999')
+        self.assertEqual(self.record.dob, 'DOB:02/02/2001')
+        self.assertEqual(
+            self.record.address,
+            'Address: 45/2 ซอยสุขุมวิท 22 ถนนสุขุมวิท แขวงคลองเตย เขตคลองเตย กรุงเทพมหานคร',
+        )
+        card = CreditCard.objects.get(id=self.record.credit_card_id)
+        self.assertEqual(card.number, '5555-6666-7777-8888')
 
-	# ---- PUT validation ----
+    # ---- PUT validation ----
 
-	def test_put_requires_all_editable_fields(self):
-		for missing in ('email', 'phone_number', 'dob', 'address', 'credit_card'):
-			payload = full_payload()
-			del payload[missing]
-			response = self.client.put(self.url, payload, format='json')
-			self.assertEqual(
-				response.status_code,
-				status.HTTP_400_BAD_REQUEST,
-				msg=f'missing {missing} should fail',
-			)
-			self.assertIn(missing, response.data)
+    def test_put_requires_all_editable_fields(self):
+        for missing in ('email', 'phone_number', 'dob', 'address', 'credit_card'):
+            payload = full_payload()
+            del payload[missing]
+            response = self.client.put(self.url, payload, format='json')
+            self.assertEqual(
+                response.status_code,
+                status.HTTP_400_BAD_REQUEST,
+                msg=f'missing {missing} should fail',
+            )
+            self.assertIn(missing, response.data)
 
-	def test_put_rejects_invalid_field_formats(self):
-		cases = {
-			'email': 'not-an-email',
-			'phone_number': '0812345678',
-			'dob': '01/01/2000',
-			'address': '123 Example Road',
-			'credit_card': '1234567890123456',
-		}
-		for field, bad_value in cases.items():
-			response = self.client.put(self.url, full_payload(**{field: bad_value}), format='json')
-			self.assertEqual(
-				response.status_code,
-				status.HTTP_400_BAD_REQUEST,
-				msg=f'{field}={bad_value!r} should be rejected',
-			)
-			self.assertIn(field, response.data)
+    def test_put_rejects_invalid_field_formats(self):
+        cases = {
+            'email': 'not-an-email',
+            'phone_number': '0812345678',
+            'dob': '01/01/2000',
+            'address': '123 Example Road',
+            'credit_card': '1234567890123456',
+        }
+        for field, bad_value in cases.items():
+            response = self.client.put(self.url, full_payload(**{field: bad_value}), format='json')
+            self.assertEqual(
+                response.status_code,
+                status.HTTP_400_BAD_REQUEST,
+                msg=f'{field}={bad_value!r} should be rejected',
+            )
+            self.assertIn(field, response.data)
 
-	# ---- DOB calendar validation ----
+    # ---- DOB calendar validation ----
 
-	def test_put_rejects_impossible_calendar_dates(self):
-		for bad_dob in ('DOB:31/02/2024', 'DOB:29/02/2023', 'DOB:31/04/2024'):
-			response = self.client.put(self.url, full_payload(dob=bad_dob), format='json')
-			self.assertEqual(
-				response.status_code,
-				status.HTTP_400_BAD_REQUEST,
-				msg=f'{bad_dob} should be rejected',
-			)
-			self.assertIn('dob', response.data)
+    def test_put_rejects_impossible_calendar_dates(self):
+        for bad_dob in ('DOB:31/02/2024', 'DOB:29/02/2023', 'DOB:31/04/2024'):
+            response = self.client.put(self.url, full_payload(dob=bad_dob), format='json')
+            self.assertEqual(
+                response.status_code,
+                status.HTTP_400_BAD_REQUEST,
+                msg=f'{bad_dob} should be rejected',
+            )
+            self.assertIn('dob', response.data)
 
-	@masked_test
-	def test_patch_accepts_leap_day_in_leap_year(self):
-		response = self.client.patch(self.url, {'dob': 'DOB:29/02/2024'}, format='json')
+    @masked_test
+    def test_patch_accepts_leap_day_in_leap_year(self):
+        response = self.client.patch(self.url, {'dob': 'DOB:29/02/2024'}, format='json')
 
-		self.assertEqual(response.status_code, status.HTTP_200_OK)
-		self.record.refresh_from_db()
-		self.assertEqual(self.record.dob, 'DOB:29/02/2024')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.record.refresh_from_db()
+        self.assertEqual(self.record.dob, 'DOB:29/02/2024')
 
-	# ---- input length limits ----
+    # ---- input length limits ----
 
-	def test_put_rejects_over_length_fields(self):
-		cases = {
-			'email': 'a' * 255 + '@example.com',
-			'phone_number': '0' * 51,
-			'dob': 'D' * 51,
-			'address': 'Address: 1 x ' + 'y' * 500,
-			'credit_card': '1' * 101,
-		}
-		for field, long_value in cases.items():
-			response = self.client.put(self.url, full_payload(**{field: long_value}), format='json')
-			self.assertEqual(
-				response.status_code,
-				status.HTTP_400_BAD_REQUEST,
-				msg=f'{field} over max_length should be rejected',
-			)
+    def test_put_rejects_over_length_fields(self):
+        cases = {
+            'email': 'a' * 255 + '@example.com',
+            'phone_number': '0' * 51,
+            'dob': 'D' * 51,
+            'address': 'Address: 1 x ' + 'y' * 500,
+            'credit_card': '1' * 101,
+        }
+        for field, long_value in cases.items():
+            response = self.client.put(self.url, full_payload(**{field: long_value}), format='json')
+            self.assertEqual(
+                response.status_code,
+                status.HTTP_400_BAD_REQUEST,
+                msg=f'{field} over max_length should be rejected',
+            )
 
-	# ---- response privacy & shape ----
+    # ---- response privacy & shape ----
 
-	@masked_test
-	def test_update_responses_never_contain_plaintext(self):
-		new_email = 'fresh@example.com'
-		new_card = '5555-6666-7777-8888'
+    @masked_test
+    def test_update_responses_never_contain_plaintext(self):
+        new_email = 'fresh@example.com'
+        new_card = '5555-6666-7777-8888'
 
-		put_response = self.client.put(
-			self.url, full_payload(email=new_email, credit_card=new_card), format='json'
-		)
-		patch_response = self.client.patch(self.url, {'phone_number': '077-777-7777'}, format='json')
+        put_response = self.client.put(
+            self.url, full_payload(email=new_email, credit_card=new_card), format='json'
+        )
+        patch_response = self.client.patch(
+            self.url, {'phone_number': '077-777-7777'}, format='json'
+        )
 
-		rendered = json.dumps([put_response.data, patch_response.data])
-		for secret in (new_email, new_card, OLD_EMAIL, OLD_CARD_NUMBER, '077-777-7777'):
-			self.assertNotIn(secret, rendered)
+        rendered = json.dumps([put_response.data, patch_response.data])
+        for secret in (new_email, new_card, OLD_EMAIL, OLD_CARD_NUMBER, '077-777-7777'):
+            self.assertNotIn(secret, rendered)
 
-	def test_response_exposes_only_safe_fields_with_card_block(self):
-		response = self.client.patch(self.url, {'email': 'shape@example.com'}, format='json')
+    def test_response_exposes_only_safe_fields_with_card_block(self):
+        response = self.client.patch(self.url, {'email': 'shape@example.com'}, format='json')
 
-		self.assertEqual(response.status_code, status.HTTP_200_OK)
-		self.assertEqual(
-			set(response.data.keys()),
-			{
-				'id',
-				'masked_email',
-				'masked_phone_number',
-				'masked_dob',
-				'masked_address',
-				'status',
-				'credit_card',
-			},
-		)
-		self.assertEqual(set(response.data['credit_card'].keys()), {'id', 'masked_number'})
-		self.assertEqual(response.data['credit_card']['id'], self.record.credit_card_id)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            set(response.data.keys()),
+            {
+                'id',
+                'masked_email',
+                'masked_phone_number',
+                'masked_dob',
+                'masked_address',
+                'status',
+                'credit_card',
+            },
+        )
+        self.assertEqual(set(response.data['credit_card'].keys()), {'id', 'masked_number'})
+        self.assertEqual(response.data['credit_card']['id'], self.record.credit_card_id)
 
-	@masked_test
-	def test_patch_response_returns_mask_for_new_card_number(self):
-		new_number = '9999-8888-7777-6666'
+    @masked_test
+    def test_patch_response_returns_mask_for_new_card_number(self):
+        new_number = '9999-8888-7777-6666'
 
-		response = self.client.patch(self.url, {'credit_card': new_number}, format='json')
+        response = self.client.patch(self.url, {'credit_card': new_number}, format='json')
 
-		self.assertEqual(response.status_code, status.HTTP_200_OK)
-		self.assertEqual(response.data['credit_card']['masked_number'], mask_credit_card(new_number))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.data['credit_card']['masked_number'], mask_credit_card(new_number)
+        )
 
-	# ---- PATCH happy path ----
+    # ---- PATCH happy path ----
 
-	def test_patch_updates_single_field(self):
-		for field, value in {
-			'email': 'patch@example.com',
-			'phone_number': '077-777-7777',
-			'dob': 'DOB:03/03/2002',
-			'address': 'Address: 9 ซอยสุขุมวิท 1 ถนนสุขุมวิท แขวงคลองเตยเหนือ เขตวัฒนา กรุงเทพมหานคร',
-			'credit_card': '9999-8888-7777-6666',
-		}.items():
-			response = self.client.patch(self.url, {field: value}, format='json')
-			self.assertEqual(response.status_code, status.HTTP_200_OK, msg=f'PATCH {field}')
-			self.record.refresh_from_db()
-			if field == 'credit_card':
-				self.assertEqual(self.record.credit_card.number, value, msg='field credit_card')
-			else:
-				self.assertEqual(getattr(self.record, field), value, msg=f'field {field}')
+    def test_patch_updates_single_field(self):
+        for field, value in {
+            'email': 'patch@example.com',
+            'phone_number': '077-777-7777',
+            'dob': 'DOB:03/03/2002',
+            'address': 'Address: 9 ซอยสุขุมวิท 1 ถนนสุขุมวิท แขวงคลองเตยเหนือ เขตวัฒนา กรุงเทพมหานคร',
+            'credit_card': '9999-8888-7777-6666',
+        }.items():
+            response = self.client.patch(self.url, {field: value}, format='json')
+            self.assertEqual(response.status_code, status.HTTP_200_OK, msg=f'PATCH {field}')
+            self.record.refresh_from_db()
+            if field == 'credit_card':
+                self.assertEqual(self.record.credit_card.number, value, msg='field credit_card')
+            else:
+                self.assertEqual(getattr(self.record, field), value, msg=f'field {field}')
 
-	def test_patch_missing_unrelated_fields_succeeds(self):
-		response = self.client.patch(self.url, {'email': 'patch@example.com'}, format='json')
+    def test_patch_missing_unrelated_fields_succeeds(self):
+        response = self.client.patch(self.url, {'email': 'patch@example.com'}, format='json')
 
-		self.assertEqual(response.status_code, status.HTTP_200_OK)
-		self.record.refresh_from_db()
-		self.assertEqual(self.record.phone_number, '081-234-5678')
-		self.assertEqual(self.record.dob, 'DOB:01/01/2000')
-		self.assertEqual(self.record.address, VALID_ADDRESS)
-		self.assertEqual(
-			CreditCard.objects.get(id=self.record.credit_card_id).number, OLD_CARD_NUMBER
-		)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.record.refresh_from_db()
+        self.assertEqual(self.record.phone_number, '081-234-5678')
+        self.assertEqual(self.record.dob, 'DOB:01/01/2000')
+        self.assertEqual(self.record.address, VALID_ADDRESS)
+        self.assertEqual(
+            CreditCard.objects.get(id=self.record.credit_card_id).number, OLD_CARD_NUMBER
+        )
 
-	# ---- PATCH validation ----
+    # ---- PATCH validation ----
 
-	def test_patch_rejects_invalid_field_formats(self):
-		for field, bad_value in {
-			'email': 'not-an-email',
-			'phone_number': '0812345678',
-			'dob': '01/01/2000',
-			'address': '123 Example Road',
-			'credit_card': '1234567890123456',
-		}.items():
-			response = self.client.patch(self.url, {field: bad_value}, format='json')
-			self.assertEqual(
-				response.status_code,
-				status.HTTP_400_BAD_REQUEST,
-				msg=f'{field}={bad_value!r} should be rejected',
-			)
-			self.assertIn(field, response.data)
+    def test_patch_rejects_invalid_field_formats(self):
+        for field, bad_value in {
+            'email': 'not-an-email',
+            'phone_number': '0812345678',
+            'dob': '01/01/2000',
+            'address': '123 Example Road',
+            'credit_card': '1234567890123456',
+        }.items():
+            response = self.client.patch(self.url, {field: bad_value}, format='json')
+            self.assertEqual(
+                response.status_code,
+                status.HTTP_400_BAD_REQUEST,
+                msg=f'{field}={bad_value!r} should be rejected',
+            )
+            self.assertIn(field, response.data)
 
-	# ---- 404 ----
+    # ---- 404 ----
 
-	def test_put_returns_404_for_unknown_id(self):
-		response = self.client.put('/api/masking-data/999999/', full_payload(), format='json')
-		self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+    def test_put_returns_404_for_unknown_id(self):
+        response = self.client.put('/api/masking-data/999999/', full_payload(), format='json')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-	def test_patch_returns_404_for_unknown_id(self):
-		response = self.client.patch(
-			'/api/masking-data/999999/', {'email': 'x@y.com'}, format='json'
-		)
-		self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+    def test_patch_returns_404_for_unknown_id(self):
+        response = self.client.patch(
+            '/api/masking-data/999999/', {'email': 'x@y.com'}, format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-	# ---- project-specific behavior (needs Create's masked.py) ----
+    # ---- project-specific behavior (needs Create's masked.py) ----
 
-	@masked_test
-	def test_patch_email_regenerates_masked_email(self):
-		new_email = 'patched@example.com'
-		response = self.client.patch(self.url, {'email': new_email}, format='json')
+    @masked_test
+    def test_patch_email_regenerates_masked_email(self):
+        new_email = 'patched@example.com'
+        response = self.client.patch(self.url, {'email': new_email}, format='json')
 
-		self.assertEqual(response.status_code, status.HTTP_200_OK)
-		self.record.refresh_from_db()
-		self.assertEqual(self.record.email, new_email)
-		self.assertEqual(self.record.masked_email, mask_email(new_email))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.record.refresh_from_db()
+        self.assertEqual(self.record.email, new_email)
+        self.assertEqual(self.record.masked_email, mask_email(new_email))
 
-	@masked_test
-	def test_patch_credit_card_reuses_existing_object(self):
-		card_id = self.record.credit_card_id
-		new_number = '9999-8888-7777-6666'
+    @masked_test
+    def test_patch_credit_card_reuses_existing_object(self):
+        card_id = self.record.credit_card_id
+        new_number = '9999-8888-7777-6666'
 
-		response = self.client.patch(self.url, {'credit_card': new_number}, format='json')
+        response = self.client.patch(self.url, {'credit_card': new_number}, format='json')
 
-		self.assertEqual(response.status_code, status.HTTP_200_OK)
-		self.record.refresh_from_db()
-		self.assertEqual(self.record.credit_card_id, card_id)
-		card = CreditCard.objects.get(id=card_id)
-		self.assertEqual(card.number, new_number)
-		self.assertEqual(card.masked_number, mask_credit_card(new_number))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.record.refresh_from_db()
+        self.assertEqual(self.record.credit_card_id, card_id)
+        card = CreditCard.objects.get(id=card_id)
+        self.assertEqual(card.number, new_number)
+        self.assertEqual(card.masked_number, mask_credit_card(new_number))
 
-	@masked_test
-	def test_atomic_rollback_when_credit_card_save_fails(self):
-		payload = full_payload(email='atomic@example.com', credit_card='4444-3333-2222-1111')
+    @masked_test
+    def test_atomic_rollback_when_credit_card_save_fails(self):
+        payload = full_payload(email='atomic@example.com', credit_card='4444-3333-2222-1111')
 
-		with (
-			mock.patch.object(CreditCard, 'save', side_effect=BoomError),
-			self.assertRaises(BoomError),
-		):
-			self.client.patch(self.url, payload, format='json')
+        with (
+            mock.patch.object(CreditCard, 'save', side_effect=BoomError),
+            self.assertRaises(BoomError),
+        ):
+            self.client.patch(self.url, payload, format='json')
 
-		self.record.refresh_from_db()
-		self.assertEqual(self.record.email, OLD_EMAIL)
-		self.assertEqual(self.record.masked_email, 'o***@example.com')
-		card = CreditCard.objects.get(id=self.record.credit_card_id)
-		self.assertEqual(card.number, OLD_CARD_NUMBER)
-		self.assertEqual(card.masked_number, '1234-****-****-1234')
+        self.record.refresh_from_db()
+        self.assertEqual(self.record.email, OLD_EMAIL)
+        self.assertEqual(self.record.masked_email, 'o***@example.com')
+        card = CreditCard.objects.get(id=self.record.credit_card_id)
+        self.assertEqual(card.number, OLD_CARD_NUMBER)
+        self.assertEqual(card.masked_number, '1234-****-****-1234')
 
 
 class MaskingDataQueryTests(APITestCase):
-	def setUp(self):
-		self.record = make_record()
+    def setUp(self):
+        self.record = make_record()
 
-	def test_get_by_id_returns_correct_object(self):
-		self.assertEqual(get_masking_data_by_id(self.record.id).id, self.record.id)
+    def test_get_by_id_returns_correct_object(self):
+        self.assertEqual(get_masking_data_by_id(self.record.id).id, self.record.id)
 
-	def test_get_unknown_id_raises_404(self):
-		with self.assertRaises(Http404):
-			get_masking_data_by_id(999999)
+    def test_get_unknown_id_raises_404(self):
+        with self.assertRaises(Http404):
+            get_masking_data_by_id(999999)
 
-	def test_update_persists_fields(self):
-		update_masking_data(self.record, email='query@example.com', masked_email='q***@example.com')
-		self.record.refresh_from_db()
-		self.assertEqual(self.record.email, 'query@example.com')
-		self.assertEqual(self.record.masked_email, 'q***@example.com')
+    def test_update_persists_fields(self):
+        update_masking_data(self.record, email='query@example.com', masked_email='q***@example.com')
+        self.record.refresh_from_db()
+        self.assertEqual(self.record.email, 'query@example.com')
+        self.assertEqual(self.record.masked_email, 'q***@example.com')
 
 
 class MaskingDataServiceTests(APITestCase):
-	def setUp(self):
-		self.record = make_record()
+    def setUp(self):
+        self.record = make_record()
 
-	@masked_test
-	def test_full_update_regenerates_masks(self):
-		result = update_masking_data_service(self.record.id, full_payload())
+    @masked_test
+    def test_full_update_regenerates_masks(self):
+        result = update_masking_data_service(self.record.id, full_payload())
 
-		self.assertEqual(result.id, self.record.id)
-		self.record.refresh_from_db()
-		self.assertEqual(self.record.email, 'new@example.com')
-		self.assertEqual(self.record.masked_email, mask_email('new@example.com'))
-		card = CreditCard.objects.get(id=self.record.credit_card_id)
-		self.assertEqual(card.number, '5555-6666-7777-8888')
-		self.assertEqual(card.masked_number, mask_credit_card('5555-6666-7777-8888'))
+        self.assertEqual(result.id, self.record.id)
+        self.record.refresh_from_db()
+        self.assertEqual(self.record.email, 'new@example.com')
+        self.assertEqual(self.record.masked_email, mask_email('new@example.com'))
+        card = CreditCard.objects.get(id=self.record.credit_card_id)
+        self.assertEqual(card.number, '5555-6666-7777-8888')
+        self.assertEqual(card.masked_number, mask_credit_card('5555-6666-7777-8888'))
 
-	@masked_test
-	def test_partial_update_changes_only_provided_fields(self):
-		update_masking_data_service(self.record.id, {'email': 'partial@example.com'})
+    @masked_test
+    def test_partial_update_changes_only_provided_fields(self):
+        update_masking_data_service(self.record.id, {'email': 'partial@example.com'})
 
-		self.record.refresh_from_db()
-		self.assertEqual(self.record.email, 'partial@example.com')
-		self.assertEqual(self.record.phone_number, '081-234-5678')
-		self.assertEqual(
-			CreditCard.objects.get(id=self.record.credit_card_id).number, OLD_CARD_NUMBER
-		)
+        self.record.refresh_from_db()
+        self.assertEqual(self.record.email, 'partial@example.com')
+        self.assertEqual(self.record.phone_number, '081-234-5678')
+        self.assertEqual(
+            CreditCard.objects.get(id=self.record.credit_card_id).number, OLD_CARD_NUMBER
+        )
 
-	@masked_test
-	def test_credit_card_update_reuses_existing_row(self):
-		card_id = self.record.credit_card_id
-		update_masking_data_service(self.record.id, {'credit_card': '9999-8888-7777-6666'})
+    @masked_test
+    def test_credit_card_update_reuses_existing_row(self):
+        card_id = self.record.credit_card_id
+        update_masking_data_service(self.record.id, {'credit_card': '9999-8888-7777-6666'})
 
-		self.record.refresh_from_db()
-		self.assertEqual(self.record.credit_card_id, card_id)
+        self.record.refresh_from_db()
+        self.assertEqual(self.record.credit_card_id, card_id)
 
-	def test_unknown_id_raises_404(self):
-		with self.assertRaises(Http404):
-			update_masking_data_service(999999, {'email': 'x@y.com'})
+    def test_unknown_id_raises_404(self):
+        with self.assertRaises(Http404):
+            update_masking_data_service(999999, {'email': 'x@y.com'})

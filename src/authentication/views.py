@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 def set_auth_cookies(response, access_token: str, refresh_token: str = None):
     """Helper utility to set both access and refresh cookies consistently."""
     is_debug = os.getenv('DEBUG', 'False') == 'True'
-    cookie_domain = os.getenv('COOKIE_DOMAIN', None) 
+    cookie_domain = os.getenv('COOKIE_DOMAIN', None)
 
     response.set_cookie(
         key='at',
@@ -143,17 +143,15 @@ class GoogleCallbackView(APIView):
             tokens = service.generate_jwt_tokens(user)
 
             response = redirect(redirect_url)
-            
+
             set_auth_cookies(
-                response, 
-                access_token=tokens['access'], 
-                refresh_token=tokens['refresh']
+                response, access_token=tokens['access'], refresh_token=tokens['refresh']
             )
-            
+
             return response
         except ValueError as exc:
-            logger.warning(f"OAuth validation failed: {exc}")
+            logger.warning(f'OAuth validation failed: {exc}')
             return redirect(f'{frontend_url}/login?error=invalid_credentials')
         except Exception:
-            logger.exception("Unexpected error during OAuth login")
+            logger.exception('Unexpected error during OAuth login')
             return redirect(f'{frontend_url}/login?error=auth_failed')

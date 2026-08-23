@@ -10,7 +10,9 @@ from src.users.services import UserService
 
 class BaseOAuthProvider(ABC):
     @abstractmethod
-    def verify_code_and_get_user_info(self, code: str, redirect_uri: str | None = None) -> dict[str, Any]:
+    def verify_code_and_get_user_info(
+        self, code: str, redirect_uri: str | None = None
+    ) -> dict[str, Any]:
         """Exchange authorization code with provider using backend credentials and return user info dict."""
 
 
@@ -23,7 +25,9 @@ class GoogleOAuthProvider(BaseOAuthProvider):
         self.client_secret = os.getenv('GOOGLE_CLIENT_SECRET')
         self.default_redirect_uri = os.getenv('FRONTEND_REDIRECT_URL', 'http://localhost:5173')
 
-    def verify_code_and_get_user_info(self, code: str, redirect_uri: str | None = None) -> dict[str, Any]:
+    def verify_code_and_get_user_info(
+        self, code: str, redirect_uri: str | None = None
+    ) -> dict[str, Any]:
         target_redirect_uri = redirect_uri or self.default_redirect_uri
 
         token_payload = {
@@ -43,9 +47,7 @@ class GoogleOAuthProvider(BaseOAuthProvider):
             raise ValueError('Access token not present in Google token response')
 
         user_info_response = requests.get(
-            self.USER_INFO_URL,
-            headers={'Authorization': f'Bearer {access_token}'},
-            timeout=5,
+            self.USER_INFO_URL, headers={'Authorization': f'Bearer {access_token}'}, timeout=5
         )
         if user_info_response.status_code != 200:
             raise ValueError('Failed to fetch user info from Google')
@@ -65,7 +67,9 @@ class OAuthUserService:
 
     def authenticate_or_create_user(self, code: str, redirect_uri: str | None = None) -> Any:
         """Verifies OAuth code and delegates user creation to UserService."""
-        user_data = self.provider.verify_code_and_get_user_info(code=code, redirect_uri=redirect_uri)
+        user_data = self.provider.verify_code_and_get_user_info(
+            code=code, redirect_uri=redirect_uri
+        )
         return self.user_service.get_or_create_oauth_user(user_data)
 
     @staticmethod

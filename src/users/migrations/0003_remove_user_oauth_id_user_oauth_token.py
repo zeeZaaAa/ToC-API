@@ -5,21 +5,13 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
-    dependencies = [
-        ("users", "0002_rename_oauth_token_user_oauth_id"),
-    ]
+    dependencies = [('users', '0002_rename_oauth_token_user_oauth_id')]
 
     operations = [
-        migrations.RemoveField(
-            model_name="user",
-            name="oauth_id",
-        ),
+        migrations.RemoveField(model_name='user', name='oauth_id'),
         migrations.AddField(
-            model_name="user",
-            name="oauth_token",
-            field=encrypted_model_fields.fields.EncryptedCharField(
-                blank=True, null=True
-            ),
+            model_name='user',
+            name='oauth_token',
+            field=encrypted_model_fields.fields.EncryptedCharField(blank=True, null=True),
         ),
     ]

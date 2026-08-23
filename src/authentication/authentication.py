@@ -6,6 +6,7 @@ class CustomJWTAuthentication(JWTAuthentication):
     Custom JWT Authentication class following DRF standards.
     Validates JWT access tokens passed via Authorization: Bearer <token>.
     """
+
     def authenticate(self, request):
         header = self.get_header(request)
         if header is None:
