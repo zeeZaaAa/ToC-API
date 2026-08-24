@@ -44,6 +44,7 @@ def mask_address(address):
 	if not (ADDRESS_REGEX.fullmatch(address)):
 		return 'ERROR'
 	house_number = len(ADDRESS_REGEX.match(address).group(2))
-	sensor = '*' * house_number
+	sensor = 'X' * house_number
 	masked_address = ADDRESS_REGEX.sub(rf'\g<1>{sensor}\g<3>', address)
 	return masked_address
+
