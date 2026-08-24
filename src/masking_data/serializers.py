@@ -63,12 +63,14 @@ class MaskingDataResponseSerializer(serializers.ModelSerializer):
         model = MaskingData
         fields = [
             'id',
+            'user',
             'masked_email',
             'masked_phone_number',
             'masked_dob',
             'masked_address',
-            'status',
             'credit_card',
+            'created_at',
+            'updated_at',
         ]
 
 
@@ -105,3 +107,21 @@ class MaskingDataCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(errors)
 
         return attrs
+
+
+class ActualDataSerializer(serializers.ModelSerializer):
+    credit_card = MaskedCreditCardSerializer(read_only=True)
+
+    class Meta:
+        model = MaskingData
+        fields = [
+            'id',
+            'user',
+            'credit_card',
+            'email',
+            'phone_number',
+            'dob',
+            'address',
+            'created_at',
+            'updated_at',
+        ]

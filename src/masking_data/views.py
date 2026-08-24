@@ -1,46 +1,62 @@
 from django.core.exceptions import ValidationError
 from django.db import DatabaseError
 from django.shortcuts import get_object_or_404
-from rest_framework import permissions, status
+from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from src.authentication.authentication import CustomJWTAuthentication
-from src.credit_cards.models import CreditCard
 from src.credit_cards.serializers import MaskingCreditCardCreateSerializer
 from src.masking_data.queries.create_masking_data import create_masking_data
+from src.masking_data.queries.masking_data_queries import (
+    get_masking_data_by_id,
+    get_user_masking_data_list,
+)
+from src.masking_data.services.masking_data_read import (
+    DynamicPageNumberPagination,
+    get_masking_serializer_class,
+)
 
 from .models import MaskingData
 from .serializers import (
-	MaskingDataCreateSerializer,
-	MaskingDataResponseSerializer,
-	MaskingDataSerializer,
-	MaskingDataUpdateSerializer,
+    MaskingDataCreateSerializer,
+    MaskingDataResponseSerializer,
+    MaskingDataUpdateSerializer,
 )
 from .services import masking_data as masking_data_service
 from .services.masking_data_service import update_masking_data_service
 
 
 class MaskingDataListView(APIView):
+    authentication_classes = [CustomJWTAuthentication]
+    permission_classes = [IsAuthenticated]
 
-	permission_classes = [IsAuthenticated]
+    def get(self, request):
+        curr_user_datas = get_user_masking_data_list(user=request.user)
+
+        paginator = DynamicPageNumberPagination()
+        result_page = paginator.paginate_queryset(curr_user_datas, request, view=self)
+        
+        if result_page is not None:
+            serializer = MaskingDataResponseSerializer(result_page, many=True)
+            return paginator.get_paginated_response(serializer.data)
+
+        serializer = MaskingDataResponseSerializer(curr_user_datas, many=True)
+        return Response(serializer.data)
+
 
 class MaskingDataView(APIView):
     authentication_classes = [CustomJWTAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-        curr_user_id = request.GET.get('id')
-        if not curr_user_id:
-            return Response(
-                {'error': 'id parameter is required'}, status=status.HTTP_400_BAD_REQUEST
-            )
+    def get(self, request, id):
+        show_actual_data = request.query_params.get('show_actual_data', '').lower() in ('true', '1')
 
-        curr_user_datas = get_object_or_404(MaskingData, id=curr_user_id, user=request.user)
-        curr_user_credit_cards = get_object_or_404(CreditCard, id=curr_user_datas.credit_card_id)
+        select_masked_data = get_masking_data_by_id(user=request.user, masking_data_id=id)
+        serializer_class = get_masking_serializer_class(show_actual_data)
 
-        serializer = MaskingDataSerializer(curr_user_datas, curr_user_credit_cards)
+        serializer = serializer_class(select_masked_data)
         return Response(serializer.data)
 
     def post(self, request):
@@ -82,6 +98,14 @@ class MaskingDataView(APIView):
         instance = update_masking_data_service(id, serializer.validated_data)
         return Response(MaskingDataResponseSerializer(instance).data)
 
+    def patch(self, request, id):
+        get_object_or_404(MaskingData, id=id, user=request.user)
+
+        serializer = MaskingDataUpdateSerializer(data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        instance = update_masking_data_service(id, serializer.validated_data)
+        return Response(MaskingDataResponseSerializer(instance).data)
+
     def delete(self, request, id):
         get_object_or_404(MaskingData, id=id, user=request.user)
 
@@ -93,11 +117,3 @@ class MaskingDataView(APIView):
             {'id': masking_data.id, 'message': 'Data was deleted successfully.'},
             status=status.HTTP_200_OK,
         )
-
-    def patch(self, request, id):
-        get_object_or_404(MaskingData, id=id, user=request.user)
-
-        serializer = MaskingDataUpdateSerializer(data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        instance = update_masking_data_service(id, serializer.validated_data)
-        return Response(MaskingDataResponseSerializer(instance).data)
