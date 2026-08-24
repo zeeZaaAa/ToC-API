@@ -4,37 +4,31 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name="CreditCard",
+            name='CreditCard',
             fields=[
                 (
-                    "id",
+                    'id',
                     models.BigAutoField(
-                        auto_created=True,
-                        primary_key=True,
-                        serialize=False,
-                        verbose_name="ID",
+                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
                     ),
                 ),
-                ("number", models.TextField()),
-                ("masked_number", models.TextField()),
+                ('number', models.TextField()),
+                ('masked_number', models.TextField()),
                 (
-                    "status",
+                    'status',
                     models.CharField(
-                        choices=[("ACTIVE", "Active"), ("DELETED", "Deleted")],
-                        default="ACTIVE",
+                        choices=[('ACTIVE', 'Active'), ('DELETED', 'Deleted')],
+                        default='ACTIVE',
                         max_length=20,
                     ),
                 ),
             ],
-            options={
-                "db_table": "credit_cards",
-            },
-        ),
+            options={'db_table': 'credit_cards'},
+        )
     ]

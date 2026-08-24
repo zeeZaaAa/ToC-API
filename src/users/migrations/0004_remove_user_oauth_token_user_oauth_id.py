@@ -4,19 +4,13 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
-    dependencies = [
-        ("users", "0003_remove_user_oauth_id_user_oauth_token"),
-    ]
+    dependencies = [('users', '0003_remove_user_oauth_id_user_oauth_token')]
 
     operations = [
-        migrations.RemoveField(
-            model_name="user",
-            name="oauth_token",
-        ),
+        migrations.RemoveField(model_name='user', name='oauth_token'),
         migrations.AddField(
-            model_name="user",
-            name="oauth_id",
+            model_name='user',
+            name='oauth_id',
             field=models.CharField(blank=True, max_length=255, null=True, unique=True),
         ),
     ]

@@ -5,7 +5,7 @@ from src.credit_cards.queries.create_credit_card import create_credit_card
 from src.masking_data.models import MaskingData
 
 
-def create_masking_data(card_data: dict, masking_data: dict,user) -> MaskingData:
+def create_masking_data(card_data: dict, masking_data: dict, user) -> MaskingData:
 
     with transaction.atomic():
         credit_card = create_credit_card(**card_data)
@@ -19,7 +19,7 @@ def create_masking_data(card_data: dict, masking_data: dict,user) -> MaskingData
             masked_email=mask_email(masking_data['email']),
             masked_phone_number=mask_phone_number(masking_data['phone_number']),
             masked_dob=mask_dob(masking_data['dob']),
-            masked_address=mask_address(masking_data['address'])
+            masked_address=mask_address(masking_data['address']),
         )
 
         return masking_record

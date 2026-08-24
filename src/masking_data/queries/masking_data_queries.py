@@ -12,9 +12,9 @@ def get_user_masking_data_list(user):
     return MaskingData.objects.filter(user=user)
 
 def update_masking_data(instance, **fields):
-	for field, value in fields.items():
-		setattr(instance, field, value)
+    for field, value in fields.items():
+        setattr(instance, field, value)
 
-	instance.save()
+    instance.save()
 
-	return instance
+    return instance

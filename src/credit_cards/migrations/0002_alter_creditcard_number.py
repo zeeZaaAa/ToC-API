@@ -5,15 +5,12 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
-    dependencies = [
-        ("credit_cards", "0001_initial"),
-    ]
+    dependencies = [('credit_cards', '0001_initial')]
 
     operations = [
         migrations.AlterField(
-            model_name="creditcard",
-            name="number",
+            model_name='creditcard',
+            name='number',
             field=encrypted_model_fields.fields.EncryptedCharField(),
-        ),
+        )
     ]
