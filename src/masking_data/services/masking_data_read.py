@@ -1,10 +1,12 @@
-from src.masking_data.serializers import MaskingDataSerializer, ActualDataSerializer
 from rest_framework.pagination import PageNumberPagination
 
-def get_masking_serializer_class(show_actual_data: str):
-    if show_actual_data and show_actual_data.lower() == 'true':
+from src.masking_data.serializers import ActualDataSerializer, MaskingDataResponseSerializer
+
+
+def get_masking_serializer_class(show_actual_data: bool):
+    if show_actual_data:
         return ActualDataSerializer
-    return MaskingDataSerializer
+    return MaskingDataResponseSerializer
 
 class DynamicPageNumberPagination(PageNumberPagination):
     page_size = 5

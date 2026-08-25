@@ -4,15 +4,8 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
-    dependencies = [
-        ("users", "0001_initial"),
-    ]
+    dependencies = [('users', '0001_initial')]
 
     operations = [
-        migrations.RenameField(
-            model_name="user",
-            old_name="oauth_token",
-            new_name="oauth_id",
-        ),
+        migrations.RenameField(model_name='user', old_name='oauth_token', new_name='oauth_id')
     ]

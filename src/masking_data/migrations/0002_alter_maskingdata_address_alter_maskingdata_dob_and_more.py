@@ -5,30 +5,27 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
-    dependencies = [
-        ("masking_data", "0001_initial"),
-    ]
+    dependencies = [('masking_data', '0001_initial')]
 
     operations = [
         migrations.AlterField(
-            model_name="maskingdata",
-            name="address",
+            model_name='maskingdata',
+            name='address',
             field=encrypted_model_fields.fields.EncryptedCharField(),
         ),
         migrations.AlterField(
-            model_name="maskingdata",
-            name="dob",
+            model_name='maskingdata',
+            name='dob',
             field=encrypted_model_fields.fields.EncryptedCharField(),
         ),
         migrations.AlterField(
-            model_name="maskingdata",
-            name="email",
+            model_name='maskingdata',
+            name='email',
             field=encrypted_model_fields.fields.EncryptedCharField(),
         ),
         migrations.AlterField(
-            model_name="maskingdata",
-            name="phone_number",
+            model_name='maskingdata',
+            name='phone_number',
             field=encrypted_model_fields.fields.EncryptedCharField(),
         ),
     ]
