@@ -1,3 +1,5 @@
+from datetime import date
+
 from shared.masked_and_pattern.pattern import (
     ADDRESS_REGEX,
     CREDIT_CARD_REGEX,
@@ -7,43 +9,131 @@ from shared.masked_and_pattern.pattern import (
 )
 
 
-def mask_credit_card(credit_card):
-    if not (CREDIT_CARD_REGEX.fullmatch(credit_card)):
-        return 'ERROR'
-    masked_credit_card = CREDIT_CARD_REGEX.sub(r'XXXX-XXXX-XXXX-\g<2>', credit_card)
-    return masked_credit_card
+def mask_credit_card(match):
+    """
+    1234-5678-9012-3456
+    ->
+    XXXX-XXXX-XXXX-3456
+    """
+    return f"XXXX-XXXX-XXXX-{match.group('last4')}"
 
 
-def mask_email(email):
-    if not (EMAIL_REGEX.fullmatch(email)):
-        return 'ERROR'
-    username, domain = email.split('@', 1)
+def mask_email(match):
+    """
+    john.doe@example.com
+    ->
+    j******e@example.com
+
+    a@example.com
+    ->
+    a@example.com
+
+    ab@example.com
+    ->
+    ab@example.com
+    """
+    email = match.group(0)
+
+    # Support both:
+    #   user@example.com
+    #   user\@example.com
+    separator = r"\@" if r"\@" in email else "@"
+
+    username, domain = email.split(separator, 1)
+
+    # 1 or 2 characters -> nothing can be hidden while preserving
+    # both first and last characters.
     if len(username) <= 2:
-        masked_user = username[0] + '*'
-    else:
-        masked_user = username[0] + ('*' * (len(username) - 2)) + username[-1]
-    masked_email = masked_user + '@' + domain
-    return masked_email
+        return email
+
+    masked_username = (
+        username[0]
+        + ("*" * (len(username) - 2))
+        + username[-1]
+    )
+
+    return f"{masked_username}{separator}{domain}"
 
 
-def mask_phone_number(phone_number):
-    if not (PHONE_NUMBER_REGEX.fullmatch(phone_number)):
-        return 'ERROR'
-    masked_phone_number = PHONE_NUMBER_REGEX.sub(r'XXX-XXX-\g<2>', phone_number)
-    return masked_phone_number
+def mask_phone_number(match):
+    """
+    093-245-7894
+    ->
+    XXX-XXX-7894
+    """
+    return f"XXX-XXX-{match.group('last4')}"
 
 
-def mask_dob(dob):
-    if not (DOB_REGEX.fullmatch(dob)):
-        return 'ERROR'
-    masked_dob = DOB_REGEX.sub(r'XX/XX\g<3>XX', dob)
-    return masked_dob
+def mask_dob(match):
+    """
+    DOB:25/12/2549
+    ->
+    DOB:XX/XX/25XX
+
+    Invalid dates are left untouched.
+    """
+
+    day = int(match.group("day"))
+    month = int(match.group("month"))
+    year = int(match.group("year"))
+
+    try:
+        date(year, month, day)
+    except ValueError:
+        return match.group(0)
+
+    return f"DOB:XX/XX/{str(year)[:2]}XX"
 
 
-def mask_address(address):
-    if not (ADDRESS_REGEX.fullmatch(address)):
-        return 'ERROR'
-    house_number = len(ADDRESS_REGEX.match(address).group(2))
-    sensor = 'X' * house_number
-    masked_address = ADDRESS_REGEX.sub(rf'\g<1>{sensor}\g<3>', address)
-    return masked_address
+def mask_address(match):
+    """
+    Address: 689 ...
+    ->
+    Address: XXX ...
+
+    Address: 12/34 ...
+    ->
+    Address: XX/XX ...
+
+    Address: 123-125 ...
+    ->
+    Address: XXX-XXX ...
+    """
+
+    prefix = match.group("prefix")
+    house_number = match.group("house_number")
+
+    masked_house_number = "".join(
+        "X" if char.isdigit() else char
+        for char in house_number
+    )
+
+    return f"{prefix}{masked_house_number}"
+
+
+def mask_sensitive_data(text: str) -> str:
+    """
+    Scan arbitrary text and mask every supported sensitive value.
+
+    Supports:
+        - multiple emails
+        - multiple credit cards
+        - multiple phone numbers
+        - multiple DOBs
+        - multiple addresses
+        - mixed values
+        - values touching each other with no spaces
+    """
+
+    if not text:
+        return text
+
+    # Each regex only modifies its own type, so applying them sequentially
+    # does not prevent another type from being detected later.
+    text = CREDIT_CARD_REGEX.sub(mask_credit_card, text)
+    text = EMAIL_REGEX.sub(mask_email, text)
+    text = PHONE_NUMBER_REGEX.sub(mask_phone_number, text)
+    text = DOB_REGEX.sub(mask_dob, text)
+    text = ADDRESS_REGEX.sub(mask_address, text)
+
+    return text
