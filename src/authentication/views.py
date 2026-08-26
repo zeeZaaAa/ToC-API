@@ -35,7 +35,7 @@ def set_refresh_cookie(response: Response, refresh_token: str):
 
 class CookieTokenRefreshView(SimpleJWTTokenRefreshView):
     def post(self, request, *args, **kwargs):
-        print("Received Cookies:", request.COOKIES)
+        print('Received Cookies:', request.COOKIES)
         refresh_token = request.COOKIES.get('rt')
 
         if not refresh_token:

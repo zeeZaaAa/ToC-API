@@ -1,13 +1,16 @@
+import uuid
+
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 
 class User(AbstractUser):
-    username = models.CharField(max_length=150, blank=True, null=True)
-    login_email = models.EmailField(max_length=100, unique=True)
-    oauth_id = models.CharField(max_length=255, unique=True, blank=True, null=True)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    username = None
+    email = models.EmailField(max_length=100, unique=True)
+    google_id = models.CharField(max_length=255, unique=True, blank=True, null=True)
 
-    USERNAME_FIELD = 'login_email'
+    USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
 
     class Meta:

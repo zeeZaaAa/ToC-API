@@ -37,7 +37,7 @@ class MaskingDataListView(APIView):
 
         paginator = DynamicPageNumberPagination()
         result_page = paginator.paginate_queryset(curr_user_datas, request, view=self)
-        
+
         if result_page is not None:
             serializer = MaskingDataResponseSerializer(result_page, many=True)
             return paginator.get_paginated_response(serializer.data)

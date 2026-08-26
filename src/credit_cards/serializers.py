@@ -23,7 +23,6 @@ class MaskingCreditCardCreateSerializer(serializers.ModelSerializer):
 
 
 class MaskedCreditCardSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = CreditCard
         fields = ['id', 'masked_number']
