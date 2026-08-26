@@ -113,27 +113,21 @@ def mask_address(match):
 
 def mask_sensitive_data(text: str) -> str:
     """
-    Scan arbitrary text and mask every supported sensitive value.
-
-    Supports:
-        - multiple emails
-        - multiple credit cards
-        - multiple phone numbers
-        - multiple DOBs
-        - multiple addresses
-        - mixed values
-        - values touching each other with no spaces
+    Scan arbitrary text and mask every supported sensitive value,
+    even when values touch each other with no spaces.
     """
-
     if not text:
         return text
 
-    # Each regex only modifies its own type, so applying them sequentially
-    # does not prevent another type from being detected later.
+    # 1. Mask rigid numeric patterns FIRST to prevent Email/Address swallowing
     text = CREDIT_CARD_REGEX.sub(mask_credit_card, text)
-    text = EMAIL_REGEX.sub(mask_email, text)
     text = PHONE_NUMBER_REGEX.sub(mask_phone_number, text)
     text = DOB_REGEX.sub(mask_dob, text)
+    
+    # 2. Mask Address prefixes
     text = ADDRESS_REGEX.sub(mask_address, text)
+    
+    # 3. Mask Emails LAST after other structures have been isolated
+    text = EMAIL_REGEX.sub(mask_email, text)
 
     return text

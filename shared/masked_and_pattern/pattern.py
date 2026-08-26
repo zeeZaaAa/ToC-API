@@ -4,10 +4,6 @@ import re
 # Credit card
 # Required format:
 #     1234-5678-9012-3456
-#
-# Must not match:
-#     1234567890123456
-#     1234 5678 9012 3456
 # ---------------------------------------------------------------------------
 
 CREDIT_CARD_PATTERN = r"""
@@ -57,10 +53,6 @@ EMAIL_REGEX = re.compile(
 # Phone number
 # Required format:
 #     093-245-7894
-#
-# Must not match:
-#     0932457894
-#     093 245 7894
 # ---------------------------------------------------------------------------
 
 PHONE_NUMBER_PATTERN = r"""

@@ -54,13 +54,39 @@ class MaskingDataListView(APIView):
 
         return Response(serializer.data)
 
+    def post(self, request):
+        serializer = MaskingDataCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            instance = create_masking_data(
+                raw_data=serializer.validated_data['data'],
+                user=request.user,
+            )
+        except (ValidationError, DatabaseError) as exc:
+            return Response(
+                {
+                    'error': 'Failed to create data',
+                    'details': str(exc),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            {
+                'message': 'Created successfully',
+                'data': MaskingDataResponseSerializer(instance).data,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
 
 class MaskingDataView(APIView):
     authentication_classes = [CustomJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        show_actual_data = request.query_params.get("show_actual_data", "").lower() in ("true", "1")
+        show_actual_data = request.query_params.get('show_actual_data', '').lower() in ('true', '1')
         masking_data = get_user_masking_data_list(user=request.user)
 
         return get_paginated_masking_response(
@@ -68,32 +94,6 @@ class MaskingDataView(APIView):
             request=request,
             view=self,
             show_actual_data=show_actual_data,
-        )
-
-    def post(self, request):
-        serializer = MaskingDataCreateSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        try:
-            instance = create_masking_data(
-                raw_data=serializer.validated_data["data"],
-                user=request.user,
-            )
-        except (ValidationError, DatabaseError) as exc:
-            return Response(
-                {
-                    "error": "Failed to create data",
-                    "details": str(exc),
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        return Response(
-            {
-                "message": "Created successfully",
-                "data": MaskingDataResponseSerializer(instance).data,
-            },
-            status=status.HTTP_201_CREATED,
         )
 
     def put(self, request, id):
@@ -128,14 +128,14 @@ class MaskingDataView(APIView):
 
         if masking_data is None:
             return Response(
-                {"message": "Data not found."},
+                {'message': 'Data not found.'},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
         return Response(
             {
-                "id": masking_data.id,
-                "message": "Data was deleted successfully.",
+                'id': masking_data.id,
+                'message': 'Data was deleted successfully.',
             },
             status=status.HTTP_200_OK,
         )
