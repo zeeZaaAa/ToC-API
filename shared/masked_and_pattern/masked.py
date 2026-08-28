@@ -1,133 +1,51 @@
-from datetime import date
+import re
 
 from shared.masked_and_pattern.pattern import (
-    ADDRESS_REGEX,
-    CREDIT_CARD_REGEX,
-    DOB_REGEX,
-    EMAIL_REGEX,
-    PHONE_NUMBER_REGEX,
+    MASTER_REGEX,
 )
-
-
-def mask_credit_card(match):
-    """
-    1234-5678-9012-3456
-    ->
-    XXXX-XXXX-XXXX-3456
-    """
-    return f"XXXX-XXXX-XXXX-{match.group('last4')}"
-
-
-def mask_email(match):
-    """
-    john.doe@example.com
-    ->
-    j******e@example.com
-
-    a@example.com
-    ->
-    a@example.com
-
-    ab@example.com
-    ->
-    ab@example.com
-    """
-    email = match.group(0)
-
-    # Support both:
-    #   user@example.com
-    #   user\@example.com
-    separator = r"\@" if r"\@" in email else "@"
-
-    username, domain = email.split(separator, 1)
-
-    # 1 or 2 characters -> nothing can be hidden while preserving
-    # both first and last characters.
-    if len(username) <= 2:
-        return email
-
-    masked_username = (
-        username[0]
-        + ("*" * (len(username) - 2))
-        + username[-1]
-    )
-
-    return f"{masked_username}{separator}{domain}"
-
-
-def mask_phone_number(match):
-    """
-    093-245-7894
-    ->
-    XXX-XXX-7894
-    """
-    return f"XXX-XXX-{match.group('last4')}"
-
-
-def mask_dob(match):
-    """
-    DOB:25/12/2549
-    ->
-    DOB:XX/XX/25XX
-
-    Invalid dates are left untouched.
-    """
-
-    day = int(match.group("day"))
-    month = int(match.group("month"))
-    year = int(match.group("year"))
-
-    try:
-        date(year, month, day)
-    except ValueError:
-        return match.group(0)
-
-    return f"DOB:XX/XX/{str(year)[:2]}XX"
-
-
-def mask_address(match):
-    """
-    Address: 689 ...
-    ->
-    Address: XXX ...
-
-    Address: 12/34 ...
-    ->
-    Address: XX/XX ...
-
-    Address: 123-125 ...
-    ->
-    Address: XXX-XXX ...
-    """
-
-    prefix = match.group("prefix")
-    house_number = match.group("house_number")
-
-    masked_house_number = "".join(
-        "X" if char.isdigit() else char
-        for char in house_number
-    )
-
-    return f"{prefix}{masked_house_number}"
 
 
 def mask_sensitive_data(text: str) -> str:
     """
-    Scan arbitrary text and mask every supported sensitive value,
-    even when values touch each other with no spaces.
+    Scans text in a single pass to mask all sensitive fields simultaneously,
+    preventing replacement outputs (e.g., 'X') from breaking adjacent matches.
     """
     if not text:
         return text
 
-    # 1. Mask rigid numeric patterns FIRST to prevent Email/Address swallowing
-    text = CREDIT_CARD_REGEX.sub(mask_credit_card, text)
-    text = PHONE_NUMBER_REGEX.sub(mask_phone_number, text)
-    text = DOB_REGEX.sub(mask_dob, text)
-    
-    # 2. Mask Address prefixes
-    text = ADDRESS_REGEX.sub(mask_address, text)
-    
-    # 3. Mask Emails LAST after other structures have been isolated
-    text = EMAIL_REGEX.sub(mask_email, text)
+    return MASTER_REGEX.sub(_mask_match, text)
 
-    return text
+def _mask_match(match: re.Match) -> str:
+    group_type = match.lastgroup
+
+    if group_type == "DOB":
+        year = int(match.group("dob_year"))
+        return f"DOB:XX/XX/{str(year)[:2]}XX"
+
+    elif group_type == "EMAIL":
+        username = match.group("email_user")
+        at_symbol = match.group("email_at")
+        domain = match.group("email_domain")
+
+        print(f"Username: {username}, At Symbol: {at_symbol}, Domain: {domain}")
+        if len(username) <= 2:
+            return f"{username}{at_symbol}{domain}"
+
+        masked_username = username[0] + ("*" * (len(username) - 2)) + username[-1]
+        return f"{masked_username}{at_symbol}{domain}"
+
+    elif group_type == "PHONE":
+        return f"XXX-XXX-{match.group('phone_last4')}"
+
+    elif group_type == "CARD":
+        return f"XXXX-XXXX-XXXX-{match.group('card_last4')}"
+
+    elif group_type == "ADDRESS":
+        prefix = match.group("address_prefix")
+        house_number = match.group("house_number")
+        body = match.group("address_body")
+
+        masked_house = "".join("X" if char.isdigit() else char for char in house_number)
+        return f"{prefix}{masked_house} {body}"
+
+    return match.group(0)
