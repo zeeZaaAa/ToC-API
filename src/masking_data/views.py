@@ -1,6 +1,5 @@
 from django.core.exceptions import ValidationError
 from django.db import DatabaseError
-from django.db.migrations import serializer
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -90,17 +89,12 @@ class MaskingDataView(APIView):
 
     def get(self, request, id):
         show_actual_data = request.query_params.get('show_actual_data', '').lower() in ('true', '1')
-    
         active_masking_data = get_user_masking_data_list(user=request.user).exclude(status=DataStatus.DELETED)
         instance = get_object_or_404(active_masking_data, id=id)
 
         serializer_class = get_masking_serializer_class(show_actual_data)
         serializer = serializer_class(instance, context={'request': request})
-        
         return Response(serializer.data)
-
-    def put(self, request, id):
-        return self._update(request, id, partial=False)
 
     def patch(self, request, id):
         return self._update(request, id, partial=True)
@@ -110,8 +104,13 @@ class MaskingDataView(APIView):
             data=request.data,
             partial=partial,
         )
-
         serializer.is_valid(raise_exception=True)
+
+        if not serializer.validated_data:
+            return Response(
+                {'error': 'No valid fields provided for update.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         instance = update_masking_data_service(
             masking_data_id=id,
@@ -121,6 +120,7 @@ class MaskingDataView(APIView):
 
         return Response(
             MaskingDataResponseSerializer(instance).data,
+            status=status.HTTP_200_OK,
         )
 
     def delete(self, request, id):
