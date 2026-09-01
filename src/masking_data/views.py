@@ -6,26 +6,26 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from shared.enums.masking_data import DataStatus
 from src.authentication.authentication import CustomJWTAuthentication
-from src.credit_cards.serializers import MaskingCreditCardCreateSerializer
 from src.masking_data.queries.create_masking_data import create_masking_data
 from src.masking_data.queries.masking_data_queries import (
-    get_masking_data_by_id,
     get_user_masking_data_list,
 )
+from src.masking_data.services.masking_data import delete
 from src.masking_data.services.masking_data_read import (
     DynamicPageNumberPagination,
     get_masking_serializer_class,
 )
+from src.masking_data.services.masking_data_service import (
+    update_masking_data_service,
+)
 
-from .models import MaskingData
 from .serializers import (
     MaskingDataCreateSerializer,
     MaskingDataResponseSerializer,
     MaskingDataUpdateSerializer,
 )
-from .services import masking_data as masking_data_service
-from .services.masking_data_service import update_masking_data_service
 
 
 class MaskingDataListView(APIView):
@@ -33,17 +33,54 @@ class MaskingDataListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        curr_user_datas = get_user_masking_data_list(user=request.user)
+        masking_data = get_user_masking_data_list(user=request.user)
 
         paginator = DynamicPageNumberPagination()
-        result_page = paginator.paginate_queryset(curr_user_datas, request, view=self)
-        
+        result_page = paginator.paginate_queryset(
+            masking_data,
+            request,
+            view=self,
+        )
+
         if result_page is not None:
-            serializer = MaskingDataResponseSerializer(result_page, many=True)
+            serializer = MaskingDataResponseSerializer(
+                result_page,
+                many=True,
+            )
             return paginator.get_paginated_response(serializer.data)
 
-        serializer = MaskingDataResponseSerializer(curr_user_datas, many=True)
+        serializer = MaskingDataResponseSerializer(
+            masking_data,
+            many=True,
+        )
+
         return Response(serializer.data)
+
+    def post(self, request):
+        serializer = MaskingDataCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            instance = create_masking_data(
+                raw_data=serializer.validated_data['data'],
+                user=request.user,
+            )
+        except (ValidationError, DatabaseError) as exc:
+            return Response(
+                {
+                    'error': 'Failed to create data',
+                    'details': str(exc),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            {
+                'message': 'Created successfully',
+                'data': MaskingDataResponseSerializer(instance).data,
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class MaskingDataView(APIView):
@@ -52,68 +89,56 @@ class MaskingDataView(APIView):
 
     def get(self, request, id):
         show_actual_data = request.query_params.get('show_actual_data', '').lower() in ('true', '1')
+        active_masking_data = get_user_masking_data_list(user=request.user).exclude(status=DataStatus.DELETED)
+        instance = get_object_or_404(active_masking_data, id=id)
 
-        select_masked_data = get_masking_data_by_id(user=request.user, masking_data_id=id)
         serializer_class = get_masking_serializer_class(show_actual_data)
-
-        serializer = serializer_class(select_masked_data)
+        serializer = serializer_class(instance, context={'request': request})
         return Response(serializer.data)
 
-    def post(self, request):
-        user = request.user
-        card_serializer = MaskingCreditCardCreateSerializer(
-            data=request.data.get('credit_card', {})
+    def patch(self, request, id):
+        return self._update(request, id, partial=True)
+
+    def _update(self, request, id, partial=False):
+        serializer = MaskingDataUpdateSerializer(
+            data=request.data,
+            partial=partial,
         )
-        masking_data_serializer = MaskingDataCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-        is_card_valid = card_serializer.is_valid()
-        is_masking_valid = masking_data_serializer.is_valid()
-
-        if not (is_card_valid and is_masking_valid):
-            errors = {}
-            if not is_card_valid:
-                errors['credit_card'] = card_serializer.errors
-            if not is_masking_valid:
-                errors.update(masking_data_serializer.errors)
-            return Response(errors, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            create_masking_data(
-                card_data=card_serializer.validated_data,
-                masking_data=masking_data_serializer.validated_data,
-                user=user,
-            )
-        except (ValidationError, DatabaseError) as e:
+        if not serializer.validated_data:
             return Response(
-                {'error': 'Failed to create data', 'details': str(e)},
+                {'error': 'No valid fields provided for update.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        return Response({'message': 'Created successfully'}, status=status.HTTP_201_CREATED)
 
-    def put(self, request, id):
-        get_object_or_404(MaskingData, id=id, user=request.user)
-
-        serializer = MaskingDataUpdateSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        instance = update_masking_data_service(id, serializer.validated_data)
-        return Response(MaskingDataResponseSerializer(instance).data)
-
-    def patch(self, request, id):
-        get_object_or_404(MaskingData, id=id, user=request.user)
-
-        serializer = MaskingDataUpdateSerializer(data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        instance = update_masking_data_service(id, serializer.validated_data)
-        return Response(MaskingDataResponseSerializer(instance).data)
-
-    def delete(self, request, id):
-        get_object_or_404(MaskingData, id=id, user=request.user)
-
-        masking_data = masking_data_service.delete(id)
-        if masking_data is None:
-            return Response({'message': 'Data not found.'}, status=status.HTTP_404_NOT_FOUND)
+        instance = update_masking_data_service(
+            masking_data_id=id,
+            user=request.user,
+            data=serializer.validated_data,
+        )
 
         return Response(
-            {'id': masking_data.id, 'message': 'Data was deleted successfully.'},
+            MaskingDataResponseSerializer(instance).data,
+            status=status.HTTP_200_OK,
+        )
+
+    def delete(self, request, id):
+        masking_data = delete(
+            masking_data_id=id,
+            user=request.user,
+        )
+
+        if masking_data is None:
+            return Response(
+                {'message': 'Data not found.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        return Response(
+            {
+                'id': masking_data.id,
+                'message': 'Data was deleted successfully.',
+            },
             status=status.HTTP_200_OK,
         )

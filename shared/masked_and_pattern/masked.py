@@ -1,50 +1,50 @@
+import re
+
 from shared.masked_and_pattern.pattern import (
-    ADDRESS_REGEX,
-    CREDIT_CARD_REGEX,
-    DOB_REGEX,
-    EMAIL_REGEX,
-    PHONE_NUMBER_REGEX,
+    MASTER_REGEX,
 )
 
 
-def mask_credit_card(credit_card):
-    if not (CREDIT_CARD_REGEX.fullmatch(credit_card)):
-        return 'ERROR'
-    masked_credit_card = CREDIT_CARD_REGEX.sub(r'XXXX-XXXX-XXXX-\g<2>', credit_card)
-    return masked_credit_card
+def mask_sensitive_data(text: str) -> str:
+    """
+    Scans text in a single pass to mask all sensitive fields simultaneously,
+    preventing replacement outputs (e.g., 'X') from breaking adjacent matches.
+    """
+    if not text:
+        return text
 
+    return MASTER_REGEX.sub(_mask_match, text)
 
-def mask_email(email):
-    if not (EMAIL_REGEX.fullmatch(email)):
-        return 'ERROR'
-    username, domain = email.split('@', 1)
-    if len(username) <= 2:
-        masked_user = username[0] + '*'
-    else:
-        masked_user = username[0] + ('*' * (len(username) - 2)) + username[-1]
-    masked_email = masked_user + '@' + domain
-    return masked_email
+def _mask_match(match: re.Match) -> str:
+    group_type = match.lastgroup
 
+    if group_type == "DOB":
+        year = int(match.group("dob_year"))
+        return f"DOB:XX/XX/{str(year)[:2]}XX"
 
-def mask_phone_number(phone_number):
-    if not (PHONE_NUMBER_REGEX.fullmatch(phone_number)):
-        return 'ERROR'
-    masked_phone_number = PHONE_NUMBER_REGEX.sub(r'XXX-XXX-\g<2>', phone_number)
-    return masked_phone_number
+    elif group_type == "EMAIL":
+        username = match.group("email_user")
+        at_symbol = match.group("email_at")
+        domain = match.group("email_domain")
 
+        if len(username) <= 2:
+            return f"{username}{at_symbol}{domain}"
 
-def mask_dob(dob):
-    if not (DOB_REGEX.fullmatch(dob)):
-        return 'ERROR'
-    masked_dob = DOB_REGEX.sub(r'XX/XX\g<3>XX', dob)
-    return masked_dob
+        masked_username = username[0] + ("*" * (len(username) - 2)) + username[-1]
+        return f"{masked_username}{at_symbol}{domain}"
 
+    elif group_type == "PHONE":
+        return f"XXX-XXX-{match.group('phone_last4')}"
 
-def mask_address(address):
-	if not (ADDRESS_REGEX.fullmatch(address)):
-		return 'ERROR'
-	house_number = len(ADDRESS_REGEX.match(address).group(2))
-	sensor = 'X' * house_number
-	masked_address = ADDRESS_REGEX.sub(rf'\g<1>{sensor}\g<3>', address)
-	return masked_address
+    elif group_type == "CARD":
+        return f"XXXX-XXXX-XXXX-{match.group('card_last4')}"
 
+    elif group_type == "ADDRESS":
+        prefix = match.group("address_prefix")
+        house_number = match.group("house_number")
+        body = match.group("address_body")
+
+        masked_house = "".join("X" if char.isdigit() else char for char in house_number)
+        return f"{prefix}{masked_house} {body}"
+
+    return match.group(0)

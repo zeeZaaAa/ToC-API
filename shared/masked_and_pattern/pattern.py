@@ -1,38 +1,112 @@
 import re
 
-CREDIT_CARD_PATTERN = (
-    r'^([0-9]{4}-[0-9]{4}-[0-9]{4}-)'
-    r'([0-9]{4})$'
+CREDIT_CARD_PATTERN = r"""
+\d{4}-\d{4}-\d{4}-(?P<card_last4>\d{4})
+"""
+
+CREDIT_CARD_REGEX = re.compile(
+    CREDIT_CARD_PATTERN,
+    re.VERBOSE,
 )
 
-EMAIL_PATTERN = (
-    r'^[a-zA-Z0-9]+([._%+-][a-zA-Z0-9]+)*'
-    r'@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+EMAIL_PATTERN = r"""
+(?P<email_user>
+    [A-Za-z0-9._%+\-]+
+)
+(?P<email_at>\\?@)
+(?P<email_domain>
+    [A-Za-z0-9-]+
+    (?:\.[A-Za-z0-9-]+)*
+    \.(?:(?!(?:DOB:|Address:|\d{3}-\d{3}-\d{4}|\d{4}-\d{4}-\d{4}-\d{4}))[A-Za-z]){2,}
+)
+"""
+EMAIL_REGEX = re.compile(
+    EMAIL_PATTERN,
+    re.VERBOSE,
 )
 
-PHONE_NUMBER_PATTERN = (
-    r'^([0-9]{3}-[0-9]{3}-)'
-    r'([0-9]{4})$'
+PHONE_NUMBER_PATTERN = r"""
+\d{3}-\d{3}-(?P<phone_last4>\d{4})
+"""
+
+PHONE_NUMBER_REGEX = re.compile(
+    PHONE_NUMBER_PATTERN,
+    re.VERBOSE,
 )
 
-DOB_PATTERN = (
-    r'^DOB:(0[1-9]|[12][0-9]|3[01])'
-    r'/(0[1-9]|1[0-2])'
-    r'(/(?!0000)[0-9]{2})([0-9]{2})$'
+DOB_PATTERN = r"""
+DOB:
+(?P<dob_day>\d{2})
+/
+(?P<dob_month>\d{2})
+/
+(?P<dob_year>\d{4})
+"""
+
+DOB_REGEX = re.compile(
+    DOB_PATTERN,
+    re.VERBOSE,
 )
 
-ADDRESS_PATTERN = (
-    r'(^Address:\s*)'  # 1
-    r'(\d+(?:/\d+)?)'  # 2
-    r'(\s+(?:ซอย\S+(?:\s+\d+)?\s+)?'  # 3
-    r'ถนน.\S+\s+'
-    r'(?:แขวง|ตำบล)\S+\s+'
-    r'(?:เขต|อำเภอ)\S+\s+'
-    r'.+)$'
+ADDRESS_PATTERN = r"""
+(?P<address_prefix>
+    Address:[ \t]*
 )
 
-CREDIT_CARD_REGEX = re.compile(CREDIT_CARD_PATTERN)
-EMAIL_REGEX = re.compile(EMAIL_PATTERN)
-PHONE_NUMBER_REGEX = re.compile(PHONE_NUMBER_PATTERN)
-DOB_REGEX = re.compile(DOB_PATTERN)
-ADDRESS_REGEX = re.compile(ADDRESS_PATTERN)
+(?P<house_number>
+    \d+
+    (?:[/-]\d+)*
+)
+
+[ \t]+
+
+(?P<address_body>
+    .*?
+    (?:
+        ซอย
+        [^,\r\n]*?
+        [ \t]+
+    )?
+
+    ถนน
+    [^,\r\n]*?
+    [ \t]+
+    
+    (?:แขวง|ตำบล)
+    [^,\r\n]*?
+    [ \t]+
+
+    (?:เขต|อำเภอ)
+    [^,\r\n]*?
+    [ \t]+
+
+    (?:(?!Address:|DOB:|\d{3}-\d{3}-\d{4}|\d{4}-\d{4}-\d{4}-\d{4}|[A-Za-z0-9._%+\-]+@)[^,\r\n])+
+)
+"""
+ADDRESS_REGEX = re.compile(
+    ADDRESS_PATTERN,
+    re.VERBOSE ,
+)
+
+MASTER_PATTERN = rf"""
+(?P<ADDRESS>{ADDRESS_PATTERN})
+|
+(?P<DOB>{DOB_PATTERN})
+|
+(?P<PHONE>{PHONE_NUMBER_PATTERN})
+|
+(?P<CARD>{CREDIT_CARD_PATTERN})
+|
+(?P<EMAIL>{EMAIL_PATTERN})
+"""
+
+MASTER_REGEX = re.compile(MASTER_PATTERN, re.VERBOSE)
+
+ALL_REGEXES = (
+    CREDIT_CARD_REGEX,
+    EMAIL_REGEX,
+    PHONE_NUMBER_REGEX,
+    DOB_REGEX,
+    ADDRESS_REGEX,
+)
+

@@ -1,46 +1,31 @@
-from django.db import transaction
+from uuid import UUID
 
-from shared.masked_and_pattern.masked import (
-    mask_address,
-    mask_credit_card,
-    mask_dob,
-    mask_email,
-    mask_phone_number,
+from django.contrib.auth.models import User
+from django.shortcuts import get_object_or_404
+from rest_framework.exceptions import ValidationError
+
+from shared.enums.masking_data import DataStatus
+from shared.masked_and_pattern.masked import mask_sensitive_data
+from src.masking_data.models import MaskingData
+from src.masking_data.queries.masking_data_queries import (
+    get_user_masking_data_list,
 )
 
-from ..queries.masking_data_queries import get_masking_data_by_id, update_masking_data
 
-MASKED_BY_FIELD = {
-    'email': 'masked_email',
-    'phone_number': 'masked_phone_number',
-    'dob': 'masked_dob',
-    'address': 'masked_address',
-}
+def update_masking_data_service(
+    masking_data_id: UUID | str,
+    user: User,
+    data: dict,
+) -> MaskingData:
+    active_queryset = get_user_masking_data_list(user=user).exclude(status=DataStatus.DELETED)
+    instance = get_object_or_404(active_queryset, id=masking_data_id)
 
-MASK_BY_FIELD = {
-    'email': mask_email,
-    'phone_number': mask_phone_number,
-    'dob': mask_dob,
-    'address': mask_address,
-}
+    raw_data = data.get("data")
+    if raw_data is None:
+        raise ValidationError({"data": "This field is required for updates."})
 
-
-def update_masking_data_service(masking_data_id, validated_data):
-    instance = get_masking_data_by_id(masking_data_id)
-
-    fields = {}
-    for field, mask_fn in MASK_BY_FIELD.items():
-        if field in validated_data:
-            fields[field] = validated_data[field]
-            fields[MASKED_BY_FIELD[field]] = mask_fn(validated_data[field])
-
-    with transaction.atomic():
-        update_masking_data(instance, **fields)
-        if 'credit_card' in validated_data:
-            update_masking_data(
-                instance.credit_card,
-                number=validated_data['credit_card'],
-                masked_number=mask_credit_card(validated_data['credit_card']),
-            )
+    instance.enc_data = raw_data
+    instance.masked_data = mask_sensitive_data(raw_data)
+    instance.save()
 
     return instance

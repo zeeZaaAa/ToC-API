@@ -5,7 +5,7 @@ from typing import Any
 import requests
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from src.users.services import UserService
+from src.users.services import OAuthUserData, UserService
 
 
 class BaseOAuthProvider(ABC):
@@ -23,11 +23,16 @@ class GoogleOAuthProvider(BaseOAuthProvider):
     def __init__(self):
         self.client_id = os.getenv('GOOGLE_CLIENT_ID')
         self.client_secret = os.getenv('GOOGLE_CLIENT_SECRET')
-        self.default_redirect_uri = os.getenv('FRONTEND_REDIRECT_URL', 'http://localhost:5173')
+        self.default_redirect_uri = os.getenv(
+            'FRONTEND_REDIRECT_URL',
+            'http://localhost:5173',
+        )
 
     def verify_code_and_get_user_info(
-        self, code: str, redirect_uri: str | None = None
-    ) -> dict[str, Any]:
+        self,
+        code: str,
+        redirect_uri: str | None = None,
+    ) -> OAuthUserData:
         target_redirect_uri = redirect_uri or self.default_redirect_uri
 
         token_payload = {
@@ -38,25 +43,43 @@ class GoogleOAuthProvider(BaseOAuthProvider):
             'grant_type': 'authorization_code',
         }
 
-        token_response = requests.post(self.TOKEN_URL, data=token_payload, timeout=5)
+        token_response = requests.post(
+            self.TOKEN_URL,
+            data=token_payload,
+            timeout=5,
+        )
+
         if token_response.status_code != 200:
             raise ValueError('Failed to exchange authorization code with Google')
 
         access_token = token_response.json().get('access_token')
+
         if not access_token:
             raise ValueError('Access token not present in Google token response')
 
         user_info_response = requests.get(
-            self.USER_INFO_URL, headers={'Authorization': f'Bearer {access_token}'}, timeout=5
+            self.USER_INFO_URL,
+            headers={'Authorization': f'Bearer {access_token}'},
+            timeout=5,
         )
+
         if user_info_response.status_code != 200:
             raise ValueError('Failed to fetch user info from Google')
 
         data = user_info_response.json()
+
+        google_id = data.get('sub')
+        email = data.get('email')
+
+        if not google_id:
+            raise ValueError('Google user ID not present')
+
+        if not email:
+            raise ValueError('Google email not present')
+
         return {
-            'oauth_id': data.get('sub'),
-            'email': data.get('email'),
-            'username': data.get('name', ''),
+            'google_id': google_id,
+            'email': email,
         }
 
 
