@@ -1,10 +1,13 @@
 from django.core.exceptions import ValidationError
 from django.db import DatabaseError
+from django.db.migrations import serializer
+from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from shared.enums.masking_data import DataStatus
 from src.authentication.authentication import CustomJWTAuthentication
 from src.masking_data.queries.create_masking_data import create_masking_data
 from src.masking_data.queries.masking_data_queries import (
@@ -13,7 +16,7 @@ from src.masking_data.queries.masking_data_queries import (
 from src.masking_data.services.masking_data import delete
 from src.masking_data.services.masking_data_read import (
     DynamicPageNumberPagination,
-    get_paginated_masking_response,
+    get_masking_serializer_class,
 )
 from src.masking_data.services.masking_data_service import (
     update_masking_data_service,
@@ -85,16 +88,16 @@ class MaskingDataView(APIView):
     authentication_classes = [CustomJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
+    def get(self, request, id):
         show_actual_data = request.query_params.get('show_actual_data', '').lower() in ('true', '1')
-        masking_data = get_user_masking_data_list(user=request.user)
+    
+        active_masking_data = get_user_masking_data_list(user=request.user).exclude(status=DataStatus.DELETED)
+        instance = get_object_or_404(active_masking_data, id=id)
 
-        return get_paginated_masking_response(
-            queryset=masking_data,
-            request=request,
-            view=self,
-            show_actual_data=show_actual_data,
-        )
+        serializer_class = get_masking_serializer_class(show_actual_data)
+        serializer = serializer_class(instance, context={'request': request})
+        
+        return Response(serializer.data)
 
     def put(self, request, id):
         return self._update(request, id, partial=False)

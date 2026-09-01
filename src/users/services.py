@@ -16,7 +16,7 @@ class UserService:
 
     @staticmethod
     def get_or_create_oauth_user(user_data: OAuthUserData) -> AbstractBaseUser:
-        user, _ = User.objects.get_or_create(
+        user, _ = User.objects.update_or_create(
             email=user_data['email'],
             defaults={
                 'google_id': user_data['google_id'],

@@ -1,5 +1,6 @@
 from django.shortcuts import get_object_or_404
 
+from shared.masked_and_pattern.masked import mask_sensitive_data
 from src.masking_data.models import MaskingData
 
 
@@ -14,8 +15,10 @@ def update_masking_data_service(
         user=user,
     )
 
-    for field, value in data.items():
-        setattr(instance, field, value)
+    raw_data = data.get("data")
+    if raw_data is not None:
+        instance.enc_data = raw_data
+        instance.masked_data = mask_sensitive_data(raw_data)
 
     instance.save()
 

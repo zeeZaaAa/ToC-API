@@ -27,7 +27,6 @@ def _mask_match(match: re.Match) -> str:
         at_symbol = match.group("email_at")
         domain = match.group("email_domain")
 
-        print(f"Username: {username}, At Symbol: {at_symbol}, Domain: {domain}")
         if len(username) <= 2:
             return f"{username}{at_symbol}{domain}"
 
