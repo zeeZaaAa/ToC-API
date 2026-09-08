@@ -29,6 +29,7 @@ from .serializers import (
 
 
 class DynamicPageNumberPagination(PageNumberPagination):
+    page_size = 10
     page_size_query_param = 'pageSize'
     max_page_size = 100
 
@@ -80,7 +81,7 @@ class MaskingDataListView(APIView):
             many=True,
         )
 
-        total_count = masking_data.count() if hasattr(masking_data, 'count') else len(masking_data)
+        total_count = len(serializer.data)
 
         return Response(
             {
