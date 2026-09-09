@@ -2,6 +2,7 @@ from django.core.exceptions import ValidationError
 from django.db import DatabaseError
 from django.shortcuts import get_object_or_404
 from rest_framework import status
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -14,7 +15,6 @@ from src.masking_data.queries.masking_data_queries import (
 )
 from src.masking_data.services.masking_data import delete
 from src.masking_data.services.masking_data_read import (
-    DynamicPageNumberPagination,
     get_masking_serializer_class,
 )
 from src.masking_data.services.masking_data_service import (
@@ -28,6 +28,33 @@ from .serializers import (
 )
 
 
+class DynamicPageNumberPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'pageSize'
+    max_page_size = 100
+
+    def get_paginated_response(self, data):
+        current_page = self.page.number
+        last_page = self.page.paginator.num_pages
+
+        prev_page = current_page - 1 if self.page.has_previous() else None
+        next_page = current_page + 1 if self.page.has_next() else None
+
+        return Response(
+            {
+                'data': data,
+                'meta': {
+                    'currentPage': current_page,
+                    'lastPage': last_page,
+                    'nextPage': next_page,
+                    'pageSize': self.get_page_size(self.request),
+                    'prevPage': prev_page,
+                    'total': self.page.paginator.count,
+                },
+            }
+        )
+        
+        
 class MaskingDataListView(APIView):
     authentication_classes = [CustomJWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -54,7 +81,21 @@ class MaskingDataListView(APIView):
             many=True,
         )
 
-        return Response(serializer.data)
+        total_count = len(serializer.data)
+
+        return Response(
+            {
+                'data': serializer.data,
+                'meta': {
+                    'currentPage': 1,
+                    'lastPage': 1,
+                    'nextPage': None,
+                    'pageSize': total_count,
+                    'prevPage': None,
+                    'total': total_count,
+                },
+            }
+        )
 
     def post(self, request):
         serializer = MaskingDataCreateSerializer(data=request.data)
@@ -89,7 +130,9 @@ class MaskingDataView(APIView):
 
     def get(self, request, id):
         show_actual_data = request.query_params.get('show_actual_data', '').lower() in ('true', '1')
-        active_masking_data = get_user_masking_data_list(user=request.user).exclude(status=DataStatus.DELETED)
+        active_masking_data = get_user_masking_data_list(user=request.user).exclude(
+            status=DataStatus.DELETED
+        )
         instance = get_object_or_404(active_masking_data, id=id)
 
         serializer_class = get_masking_serializer_class(show_actual_data)
@@ -142,3 +185,4 @@ class MaskingDataView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
