@@ -1,13 +1,16 @@
 from django.core.exceptions import ValidationError
 from django.db import DatabaseError
 from django.shortcuts import get_object_or_404
+from djangorestframework_camel_case.parser import CamelCaseJSONParser
 from rest_framework import status
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.parsers import JSONParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from shared.enums.masking_data import DataStatus
+from shared.masked_and_pattern.masked import mask_sensitive_data
 from src.authentication.authentication import CustomJWTAuthentication
 from src.masking_data.queries.create_masking_data import create_masking_data
 from src.masking_data.queries.masking_data_queries import (
@@ -30,7 +33,7 @@ from .serializers import (
 
 class DynamicPageNumberPagination(PageNumberPagination):
     page_size = 10
-    page_size_query_param = 'pageSize'
+    page_size_query_param = 'page_size'
     max_page_size = 100
 
     def get_paginated_response(self, data):
@@ -44,11 +47,11 @@ class DynamicPageNumberPagination(PageNumberPagination):
             {
                 'data': data,
                 'meta': {
-                    'currentPage': current_page,
-                    'lastPage': last_page,
-                    'nextPage': next_page,
-                    'pageSize': self.get_page_size(self.request),
-                    'prevPage': prev_page,
+                    'current_page': current_page,
+                    'last_page': last_page,
+                    'next_page': next_page,
+                    'page_size': self.get_page_size(self.request),
+                    'prev_page': prev_page,
                     'total': self.page.paginator.count,
                 },
             }
@@ -58,6 +61,7 @@ class DynamicPageNumberPagination(PageNumberPagination):
 class MaskingDataListView(APIView):
     authentication_classes = [CustomJWTAuthentication]
     permission_classes = [IsAuthenticated]
+    parser_classes = [CamelCaseJSONParser, JSONParser]
 
     def get(self, request):
         masking_data = get_user_masking_data_list(user=request.user)
@@ -87,11 +91,11 @@ class MaskingDataListView(APIView):
             {
                 'data': serializer.data,
                 'meta': {
-                    'currentPage': 1,
-                    'lastPage': 1,
-                    'nextPage': None,
-                    'pageSize': total_count,
-                    'prevPage': None,
+                    'current_page': 1,
+                    'last_page': 1,
+                    'next_page': None,
+                    'page_size': total_count,
+                    'prev_page': None,
                     'total': total_count,
                 },
             }
@@ -127,6 +131,7 @@ class MaskingDataListView(APIView):
 class MaskingDataView(APIView):
     authentication_classes = [CustomJWTAuthentication]
     permission_classes = [IsAuthenticated]
+    parser_classes = [CamelCaseJSONParser, JSONParser]
 
     def get(self, request, id):
         show_actual_data = request.query_params.get('show_actual_data', '').lower() in ('true', '1')
@@ -186,3 +191,15 @@ class MaskingDataView(APIView):
             status=status.HTTP_200_OK,
         )
 
+class GuestMaskingDataView(APIView):
+    parser_classes = [CamelCaseJSONParser, JSONParser]
+    
+    def post(self, request):
+        data = request.data.get('data') if isinstance(request.data, dict) else None
+        if not data:
+            return Response(
+                {'error': 'Field "data" is required.'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        masked_text = mask_sensitive_data(data)
+        return Response({'masked_text': masked_text})
