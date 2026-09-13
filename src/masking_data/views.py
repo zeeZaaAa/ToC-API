@@ -66,6 +66,17 @@ class MaskingDataListView(APIView):
     def get(self, request):
         masking_data = get_user_masking_data_list(user=request.user)
 
+        order_by = (
+            request.query_params.get('order') 
+        ).upper()
+        
+        sort_field = 'updated_at'
+
+        if order_by == 'DESC':
+            masking_data = masking_data.order_by(f'-{sort_field}')
+        else:
+            masking_data = masking_data.order_by(sort_field)
+
         paginator = DynamicPageNumberPagination()
         result_page = paginator.paginate_queryset(
             masking_data,
@@ -84,7 +95,6 @@ class MaskingDataListView(APIView):
             masking_data,
             many=True,
         )
-
         total_count = len(serializer.data)
 
         return Response(
