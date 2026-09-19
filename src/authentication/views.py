@@ -105,7 +105,7 @@ class GoogleCallbackView(APIView):
         frontend_url = os.getenv('FRONTEND_URL', 'http://localhost:5173')
         redirect_url = os.getenv('FRONTEND_REDIRECT_URL', 'http://localhost:5173/')
         backend_redirect_uri = os.getenv(
-            'GOOGLE_BACKEND_REDIRECT_URI', 'http://localhost:8000/api/auth/callback/'
+            'GOOGLE_REDIRECT_URI', 'http://localhost:8000/api/auth/callback/'
         )
 
         if error_param:
@@ -150,7 +150,7 @@ class GoogleLoginRedirectView(APIView):
     def get(self, request):
         client_id = os.getenv('GOOGLE_CLIENT_ID')
         redirect_uri = os.getenv(
-            'GOOGLE_BACKEND_REDIRECT_URI', 'http://localhost:8000/api/auth/callback/'
+            'GOOGLE_REDIRECT_URI', 'http://localhost:8000/api/auth/callback/'
         )
 
         params = {

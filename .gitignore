@@ -167,6 +167,10 @@ cython_debug/
 .ruff_cache/
 
 staticfiles/
+<<<<<<< HEAD
+=======
+
+>>>>>>> 90f9b06c18f83effa7760c843b60fb2e10a65ddf
 # PyCharm
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
 #  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
