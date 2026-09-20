@@ -1,7 +1,9 @@
 import re
 
 CREDIT_CARD_PATTERN = r"""
+(?:(?<!\d)|(?<=\d{3}-\d{3}-\d{4}))
 \d{4}-\d{4}-\d{4}-(?P<card_last4>\d{4})
+(?:(?!\d)|(?=\d{3}-\d{3}-\d{4}))
 """
 
 CREDIT_CARD_REGEX = re.compile(
@@ -26,7 +28,9 @@ EMAIL_REGEX = re.compile(
 )
 
 PHONE_NUMBER_PATTERN = r"""
+(?:(?<!\d)|(?<=\d{4}-\d{4}-\d{4}-\d{4}))
 \d{3}-\d{3}-(?P<phone_last4>\d{4})
+(?:(?!\d)|(?=\d{4}-\d{4}-\d{4}-\d{4}))
 """
 
 PHONE_NUMBER_REGEX = re.compile(
@@ -54,11 +58,12 @@ ADDRESS_PATTERN = r"""
 )
 
 (?P<house_number>
+    (บ้านเลขที่[ \t]*)*
     \d+
     (?:[/-]\d+)*
 )
 
-[ \t]+
+[ \t]*
 
 (?P<address_body>
     .*?
@@ -68,19 +73,25 @@ ADDRESS_PATTERN = r"""
         [ \t]+
     )?
 
+    (?:
     ถนน
     [^,\r\n]*?
     [ \t]+
+    )?
     
+    (?:
     (?:แขวง|ตำบล)
     [^,\r\n]*?
     [ \t]+
+    )?
 
+    (?:
     (?:เขต|อำเภอ)
     [^,\r\n]*?
     [ \t]+
+    )?
 
-    (?:(?!Address:|DOB:|\d{3}-\d{3}-\d{4}|\d{4}-\d{4}-\d{4}-\d{4}|[A-Za-z0-9._%+\-]+@)[^,\r\n])+
+    (?:(?!Address:|DOB:|\d{3}-\d{3}-\d{4}|\d{4}-\d{4}-\d{4}-\d{4}|[A-Za-z0-9._%+\-]+@)[^,\r\n])*
 )
 """
 ADDRESS_REGEX = re.compile(
