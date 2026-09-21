@@ -17,34 +17,38 @@ def mask_sensitive_data(text: str) -> str:
 
 def _mask_match(match: re.Match) -> str:
     group_type = match.lastgroup
+    masked_val = ''
 
-    if group_type == "DOB":
-        year = int(match.group("dob_year"))
-        return f"DOB:XX/XX/{str(year)[:2]}XX"
+    if group_type == 'DOB':
+        year = int(match.group('dob_year'))
+        masked_val = f'DOB:XX/XX/{str(year)[:2]}XX'
 
-    elif group_type == "EMAIL":
-        username = match.group("email_user")
-        at_symbol = match.group("email_at")
-        domain = match.group("email_domain")
+    elif group_type == 'EMAIL':
+        username = match.group('email_user')
+        at_symbol = match.group('email_at')
+        domain = match.group('email_domain')
 
         if len(username) <= 2:
-            return f"{username}{at_symbol}{domain}"
+            masked_val = f'{username}{at_symbol}{domain}'
+        else:
+            masked_username = username[0] + ('*' * (len(username) - 2)) + username[-1]
+            masked_val = f'{masked_username}{at_symbol}{domain}'
 
-        masked_username = username[0] + ("*" * (len(username) - 2)) + username[-1]
-        return f"{masked_username}{at_symbol}{domain}"
+    elif group_type == 'PHONE':
+        masked_val = f'XXX-XXX-{match.group("phone_last4")}'
 
-    elif group_type == "PHONE":
-        return f"XXX-XXX-{match.group('phone_last4')}"
+    elif group_type == 'CARD':
+        masked_val = f'XXXX-XXXX-XXXX-{match.group("card_last4")}'
 
-    elif group_type == "CARD":
-        return f"XXXX-XXXX-XXXX-{match.group('card_last4')}"
+    elif group_type == 'ADDRESS':
+        prefix = match.group('address_prefix')
+        house_number = match.group('house_number')
+        body = match.group('address_body')
 
-    elif group_type == "ADDRESS":
-        prefix = match.group("address_prefix")
-        house_number = match.group("house_number")
-        body = match.group("address_body")
+        masked_house = ''.join('X' if char.isdigit() else char for char in house_number)
+        masked_val = f'{prefix}{masked_house} {body}'
 
-        masked_house = "".join("X" if char.isdigit() else char for char in house_number)
-        return f"{prefix}{masked_house} {body}"
+    else:
+        return match.group(0)
 
-    return match.group(0)
+    return f'<{group_type}>{masked_val}</{group_type}>'
