@@ -40,9 +40,9 @@ PHONE_NUMBER_REGEX = re.compile(
 
 DOB_PATTERN = r"""
 DOB[ \t]*:[ \t]*
-(?P<dob_day>\d{2})
+(?P<dob_day>\d{1,2})
 /
-(?P<dob_month>\d{2})
+(?P<dob_month>\d{1,2})
 /
 (?P<dob_year>\d{4})
 """
