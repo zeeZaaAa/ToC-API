@@ -19,7 +19,7 @@ EMAIL_PATTERN = r"""
 (?P<email_domain>
     [A-Za-z0-9-]+
     (?:\.[A-Za-z0-9-]+)*
-    \.(?:(?!(?:DOB:|Address:|\d{3}-\d{3}-\d{4}|\d{4}-\d{4}-\d{4}-\d{4}))[A-Za-z]){2,}
+    \.(?:(?!(?:DOB[ \t]*:|Address[ \t]*:|\d{3}-\d{3}-\d{4}|\d{4}-\d{4}-\d{4}-\d{4}))[A-Za-z]){2,}
 )
 """
 EMAIL_REGEX = re.compile(
@@ -39,7 +39,7 @@ PHONE_NUMBER_REGEX = re.compile(
 )
 
 DOB_PATTERN = r"""
-DOB:
+DOB[ \t]*:[ \t]*
 (?P<dob_day>\d{2})
 /
 (?P<dob_month>\d{2})
@@ -54,7 +54,7 @@ DOB_REGEX = re.compile(
 
 ADDRESS_PATTERN = r"""
 (?P<address_prefix>
-    Address:[ \t]*
+    Address[ \t]*:[ \t]*
 )
 
 (?P<house_number>
@@ -91,7 +91,7 @@ ADDRESS_PATTERN = r"""
     [ \t]+
     )?
 
-    (?:(?!Address:|DOB:|\d{3}-\d{3}-\d{4}|\d{4}-\d{4}-\d{4}-\d{4}|[A-Za-z0-9._%+\-]+@)[^,\r\n])*
+    (?:(?!Address[ \t]*:|DOB[ \t]*:|\d{3}-\d{3}-\d{4}|\d{4}-\d{4}-\d{4}-\d{4}|[A-Za-z0-9._%+\-]+@)[^,\r\n])*
 )
 """
 ADDRESS_REGEX = re.compile(
