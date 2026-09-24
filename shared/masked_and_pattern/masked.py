@@ -20,8 +20,8 @@ def _mask_match(match: re.Match) -> str:
     masked_val = ''
 
     if group_type == 'DOB':
-        year = int(match.group('dob_year'))
-        masked_val = f'DOB:XX/XX/{str(year)[:2]}XX'
+        year_str = match.group('dob_year').zfill(4)
+        masked_val = f'DOB:XX/XX/{year_str[:2]}XX'
 
     elif group_type == 'EMAIL':
         username = match.group('email_user')
