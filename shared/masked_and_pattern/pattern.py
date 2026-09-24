@@ -44,7 +44,7 @@ DOB[ \t]*:[ \t]*
 /
 (?P<dob_month>\d{1,2})
 /
-(?P<dob_year>\d{4})
+(?P<dob_year>\d{1,4})
 """
 
 DOB_REGEX = re.compile(
