@@ -4,16 +4,53 @@ from shared.masked_and_pattern.pattern import (
     MASTER_REGEX,
 )
 
+CONCAT_CARD = re.compile(
+    r'(?<=\d{4}-\d{4}-\d{4}-\d{4})'
+    r'(?=[A-Za-z0-9._%+\-]+@|\d{3}-\d{3}-\d{4}|\d{4}-\d{4}-\d{4}-\d{4}|(?:DOB|Address)[ \t]*:)'
+)
 
-def mask_sensitive_data(text: str) -> str:
+CONCAT_PHONE = re.compile(
+    r'(?<=\d{3}-\d{3}-\d{4})'
+    r'(?=[A-Za-z0-9._%+\-]+@|\d{3}-\d{3}-\d{4}|\d{4}-\d{4}-\d{4}-\d{4}|(?:DOB|Address)[ \t]*:)'
+)
+
+CONCAT_DOB = re.compile(
+    r'(DOB[ \t]*:[ \t]*\d{1,2}/\d{1,2}/\d{4})'
+    r'(?=[A-Za-z0-9._%+\-]+@|\d{3}-\d{3}-\d{4}|\d{4}-\d{4}-\d{4}-\d{4}|(?:DOB|Address)[ \t]*:)'
+)
+
+CONCAT_EMAIL = re.compile(
+    r'(@[A-Za-z0-9.-]+\.[A-Za-z]{2,})'
+    r'(?=[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{4}|[0-9]{3}-[0-9]{3}-[0-9]{4}|(?:DOB|Address)[ \t]*:|[A-Za-z0-9._%+\-]+@)'
+)
+
+
+def _preprocess_concatenated_fields(text: str) -> str:
     """
-    Scans text in a single pass to mask all sensitive fields simultaneously,
-    preventing replacement outputs (e.g., 'X') from breaking adjacent matches.
+    Inserts spaces between ANY sensitive fields glued together without whitespace.
     """
     if not text:
         return text
 
+    text = CONCAT_CARD.sub(' ', text)
+    text = CONCAT_PHONE.sub(' ', text)
+    text = CONCAT_DOB.sub(r'\1 ', text)
+    text = CONCAT_EMAIL.sub(r'\1 ', text)
+
+    return text
+
+
+def mask_sensitive_data(text: str) -> str:
+    """
+    Scans text in a single pass to mask all sensitive fields simultaneously.
+    """
+    if not text:
+        return text
+
+    text = _preprocess_concatenated_fields(text)
+
     return MASTER_REGEX.sub(_mask_match, text)
+
 
 def _mask_match(match: re.Match) -> str:
     group_type = match.lastgroup
