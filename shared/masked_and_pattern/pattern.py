@@ -1,9 +1,9 @@
 import re
 
 CREDIT_CARD_PATTERN = r"""
-(?:(?<!\d)|(?<=\d{3}-\d{3}-\d{4}))
+(?<!\d)
 \d{4}-\d{4}-\d{4}-(?P<card_last4>\d{4})
-(?:(?!\d)|(?=\d{3}-\d{3}-\d{4}))
+(?!\d)
 """
 
 CREDIT_CARD_REGEX = re.compile(
@@ -22,15 +22,16 @@ EMAIL_PATTERN = r"""
     \.(?:(?!(?:DOB[ \t]*:|Address[ \t]*:|\d{3}-\d{3}-\d{4}|\d{4}-\d{4}-\d{4}-\d{4}))[A-Za-z]){2,}
 )
 """
+
 EMAIL_REGEX = re.compile(
     EMAIL_PATTERN,
     re.VERBOSE,
 )
 
 PHONE_NUMBER_PATTERN = r"""
-(?:(?<!\d)|(?<=\d{4}-\d{4}-\d{4}-\d{4}))
+(?<!\d)
 \d{3}-\d{3}-(?P<phone_last4>\d{4})
-(?:(?!\d)|(?=\d{4}-\d{4}-\d{4}-\d{4}))
+(?!\d)
 """
 
 PHONE_NUMBER_REGEX = re.compile(
@@ -45,6 +46,7 @@ DOB[ \t]*:[ \t]*
 (?P<dob_month>\d{1,2})
 /
 (?P<dob_year>\d{1,4})
+(?!\d)
 """
 
 DOB_REGEX = re.compile(
@@ -94,9 +96,10 @@ ADDRESS_PATTERN = r"""
     (?:(?!Address[ \t]*:|DOB[ \t]*:|\d{3}-\d{3}-\d{4}|\d{4}-\d{4}-\d{4}-\d{4}|[A-Za-z0-9._%+\-]+@)[^,\r\n])*
 )
 """
+
 ADDRESS_REGEX = re.compile(
     ADDRESS_PATTERN,
-    re.VERBOSE ,
+    re.VERBOSE,
 )
 
 MASTER_PATTERN = rf"""
@@ -121,3 +124,22 @@ ALL_REGEXES = (
     ADDRESS_REGEX,
 )
 
+CONCAT_CARD = re.compile(
+    r'(?<=\d{4}-\d{4}-\d{4}-\d{4})'
+    r'(?=[A-Za-z0-9._%+\-]+@|\d{3}-\d{3}-\d{4}|\d{4}-\d{4}-\d{4}-\d{4}|(?:DOB|Address)[ \t]*:)'
+)
+
+CONCAT_PHONE = re.compile(
+    r'(?<=\d{3}-\d{3}-\d{4})'
+    r'(?=[A-Za-z0-9._%+\-]+@|\d{3}-\d{3}-\d{4}|\d{4}-\d{4}-\d{4}-\d{4}|(?:DOB|Address)[ \t]*:)'
+)
+
+CONCAT_DOB = re.compile(
+    r'(DOB[ \t]*:[ \t]*\d{1,2}/\d{1,2}/\d{4})'
+    r'(?=[A-Za-z0-9._%+\-]+@|\d{3}-\d{3}-\d{4}|\d{4}-\d{4}-\d{4}-\d{4}|(?:DOB|Address)[ \t]*:)'
+)
+
+CONCAT_EMAIL = re.compile(
+    r'(@[A-Za-z0-9.-]+\.[A-Za-z]{2,})'
+    r'(?=[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{4}|[0-9]{3}-[0-9]{3}-[0-9]{4}|(?:DOB|Address)[ \t]*:|[A-Za-z0-9._%+\-]+@)'
+)
