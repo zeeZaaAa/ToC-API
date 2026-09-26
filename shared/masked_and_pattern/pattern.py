@@ -123,3 +123,23 @@ ALL_REGEXES = (
     DOB_REGEX,
     ADDRESS_REGEX,
 )
+
+CONCAT_CARD = re.compile(
+    r'(?<=\d{4}-\d{4}-\d{4}-\d{4})'
+    r'(?=[A-Za-z0-9._%+\-]+@|\d{3}-\d{3}-\d{4}|\d{4}-\d{4}-\d{4}-\d{4}|(?:DOB|Address)[ \t]*:)'
+)
+
+CONCAT_PHONE = re.compile(
+    r'(?<=\d{3}-\d{3}-\d{4})'
+    r'(?=[A-Za-z0-9._%+\-]+@|\d{3}-\d{3}-\d{4}|\d{4}-\d{4}-\d{4}-\d{4}|(?:DOB|Address)[ \t]*:)'
+)
+
+CONCAT_DOB = re.compile(
+    r'(DOB[ \t]*:[ \t]*\d{1,2}/\d{1,2}/\d{4})'
+    r'(?=[A-Za-z0-9._%+\-]+@|\d{3}-\d{3}-\d{4}|\d{4}-\d{4}-\d{4}-\d{4}|(?:DOB|Address)[ \t]*:)'
+)
+
+CONCAT_EMAIL = re.compile(
+    r'(@[A-Za-z0-9.-]+\.[A-Za-z]{2,})'
+    r'(?=[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{4}|[0-9]{3}-[0-9]{3}-[0-9]{4}|(?:DOB|Address)[ \t]*:|[A-Za-z0-9._%+\-]+@)'
+)
