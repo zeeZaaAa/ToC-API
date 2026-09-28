@@ -1,19 +1,40 @@
 import re
 
 from shared.masked_and_pattern.pattern import (
+    CONCAT_CARD,
+    CONCAT_DOB,
+    CONCAT_EMAIL,
+    CONCAT_PHONE,
     MASTER_REGEX,
 )
 
 
-def mask_sensitive_data(text: str) -> str:
+def _preprocess_concatenated_fields(text: str) -> str:
     """
-    Scans text in a single pass to mask all sensitive fields simultaneously,
-    preventing replacement outputs (e.g., 'X') from breaking adjacent matches.
+    Inserts spaces between ANY sensitive fields glued together without whitespace.
     """
     if not text:
         return text
 
+    text = CONCAT_CARD.sub(' ', text)
+    text = CONCAT_PHONE.sub(' ', text)
+    text = CONCAT_DOB.sub(r'\1 ', text)
+    text = CONCAT_EMAIL.sub(r'\1 ', text)
+
+    return text
+
+
+def mask_sensitive_data(text: str) -> str:
+    """
+    Scans text in a single pass to mask all sensitive fields simultaneously.
+    """
+    if not text:
+        return text
+
+    text = _preprocess_concatenated_fields(text)
+
     return MASTER_REGEX.sub(_mask_match, text)
+
 
 def _mask_match(match: re.Match) -> str:
     group_type = match.lastgroup
