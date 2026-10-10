@@ -3,7 +3,7 @@ name: toc-app-prod
 services:
   db:
     image: postgres:16-alpine
-    restart: always
+    restart: unless-stopped
     environment:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
@@ -23,7 +23,7 @@ services:
       target: production
     env_file:
       - .env
-    restart: always
+    restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
