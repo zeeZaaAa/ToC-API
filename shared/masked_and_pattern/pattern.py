@@ -1,0 +1,145 @@
+import re
+
+CREDIT_CARD_PATTERN = r"""
+(?<!\d)
+\d{4}-\d{4}-\d{4}-(?P<card_last4>\d{4})
+(?!\d)
+"""
+
+CREDIT_CARD_REGEX = re.compile(
+    CREDIT_CARD_PATTERN,
+    re.VERBOSE,
+)
+
+EMAIL_PATTERN = r"""
+(?P<email_user>
+    [A-Za-z0-9._%+\-]+
+)
+(?P<email_at>\\?@)
+(?P<email_domain>
+    [A-Za-z0-9-]+
+    (?:\.[A-Za-z0-9-]+)*
+    \.(?:(?!(?:DOB[ \t]*:|Address[ \t]*:|\d{3}-\d{3}-\d{4}|\d{4}-\d{4}-\d{4}-\d{4}))[A-Za-z]){2,}
+)
+"""
+
+EMAIL_REGEX = re.compile(
+    EMAIL_PATTERN,
+    re.VERBOSE,
+)
+
+PHONE_NUMBER_PATTERN = r"""
+(?<!\d)
+\d{3}-\d{3}-(?P<phone_last4>\d{4})
+(?!\d)
+"""
+
+PHONE_NUMBER_REGEX = re.compile(
+    PHONE_NUMBER_PATTERN,
+    re.VERBOSE,
+)
+
+DOB_PATTERN = r"""
+DOB[ \t]*:[ \t]*
+(?P<dob_day>\d{1,2})
+/
+(?P<dob_month>\d{1,2})
+/
+(?P<dob_year>\d{1,4})
+(?!\d)
+"""
+
+DOB_REGEX = re.compile(
+    DOB_PATTERN,
+    re.VERBOSE,
+)
+
+ADDRESS_PATTERN = r"""
+(?P<address_prefix>
+    Address[ \t]*:[ \t]*
+)
+
+(?P<house_number>
+    (บ้านเลขที่[ \t]*)*
+    \d+
+    (?:[/-]\d+)*
+)
+
+[ \t]*
+
+(?P<address_body>
+    .*?
+    (?:
+        ซอย
+        [^,\r\n]*?
+        [ \t]+
+    )?
+
+    (?:
+    ถนน
+    [^,\r\n]*?
+    [ \t]+
+    )?
+    
+    (?:
+    (?:แขวง|ตำบล)
+    [^,\r\n]*?
+    [ \t]+
+    )?
+
+    (?:
+    (?:เขต|อำเภอ)
+    [^,\r\n]*?
+    [ \t]+
+    )?
+
+    (?:(?!Address[ \t]*:|DOB[ \t]*:|\d{3}-\d{3}-\d{4}|\d{4}-\d{4}-\d{4}-\d{4}|[A-Za-z0-9._%+\-]+@)[^,\r\n])*
+)
+"""
+
+ADDRESS_REGEX = re.compile(
+    ADDRESS_PATTERN,
+    re.VERBOSE,
+)
+
+MASTER_PATTERN = rf"""
+(?P<ADDRESS>{ADDRESS_PATTERN})
+|
+(?P<DOB>{DOB_PATTERN})
+|
+(?P<PHONE>{PHONE_NUMBER_PATTERN})
+|
+(?P<CARD>{CREDIT_CARD_PATTERN})
+|
+(?P<EMAIL>{EMAIL_PATTERN})
+"""
+
+MASTER_REGEX = re.compile(MASTER_PATTERN, re.VERBOSE)
+
+ALL_REGEXES = (
+    CREDIT_CARD_REGEX,
+    EMAIL_REGEX,
+    PHONE_NUMBER_REGEX,
+    DOB_REGEX,
+    ADDRESS_REGEX,
+)
+
+CONCAT_CARD = re.compile(
+    r'(?<=\d{4}-\d{4}-\d{4}-\d{4})'
+    r'(?=[A-Za-z0-9._%+\-]+@|\d{3}-\d{3}-\d{4}|\d{4}-\d{4}-\d{4}-\d{4}|(?:DOB|Address)[ \t]*:)'
+)
+
+CONCAT_PHONE = re.compile(
+    r'(?<=\d{3}-\d{3}-\d{4})'
+    r'(?=[A-Za-z0-9._%+\-]+@|\d{3}-\d{3}-\d{4}|\d{4}-\d{4}-\d{4}-\d{4}|(?:DOB|Address)[ \t]*:)'
+)
+
+CONCAT_DOB = re.compile(
+    r'(DOB[ \t]*:[ \t]*\d{1,2}/\d{1,2}/\d{4})'
+    r'(?=[A-Za-z0-9._%+\-]+@|\d{3}-\d{3}-\d{4}|\d{4}-\d{4}-\d{4}-\d{4}|(?:DOB|Address)[ \t]*:)'
+)
+
+CONCAT_EMAIL = re.compile(
+    r'(@[A-Za-z0-9.-]+\.[A-Za-z]{2,})'
+    r'(?=[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{4}|[0-9]{3}-[0-9]{3}-[0-9]{4}|(?:DOB|Address)[ \t]*:|[A-Za-z0-9._%+\-]+@)'
+)

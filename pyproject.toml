@@ -4,5 +4,5 @@ lint.ignore = ["RUF012"]
 
 [tool.ruff.format]
 quote-style = "single"
-indent-style = "tab"
-skip-magic-trailing-comma = true
+indent-style = "space"
+skip-magic-trailing-comma = false
